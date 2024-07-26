@@ -28,21 +28,20 @@ var Terrain3 = class extends Composite {
 
         this.terrainWidth = options?.terrainWidth ?? this.heightmaps.width * this.terrainScale;
         this.terrainDepth = options?.terrainDepth ?? this.heightmaps.depth * this.terrainScale;
-
-        this.hitbox = options?.hitbox ?? this.makeHitbox();
-
     }
 
-    makeHitbox() {
-        /*
+    calculateHitbox() {
+        
         var minHeight = Infinity;
         var maxHeight = -Infinity;
-        for(var i = 0; i < map.map.length; i++){
-            minHeight = Math.min(minHeight, map.map[i]);
+        for(var i = 0; i < this.heightmaps.top.map.length; i++){
             maxHeight = Math.max(maxHeight, map.map[i]);
         }
-        return new Hitbox3(new Vector3(-this.heightmaps.widthSegments / 2, minHeight, -this.heightmaps.depthSegments / 2), new Vector3(this.heightmaps.widthSegments / 2, maxHeight, this.heightmaps.depthSegments / 2));
-         */
+
+        for(var i = 0; i < this.heightmaps.bottom.map.length; i++){
+            minHeight = Math.min(minHeight, map.map[i]);
+        }
+        
         return new Hitbox3();
     }
 
@@ -215,7 +214,7 @@ var Terrain3 = class extends Composite {
     calculateMeshVertices(geometry, map) {
         var attrib = geometry.attributes;
 
-        for (var i = 0; i < attrib.position.count; i += 6) {
+        /*for (var i = 0; i < attrib.position.count; i += 6) {
             var i2 = i / 6;
             var posV = new Vector3(i2 % this.heightmaps.widthSegments, 0, Math.floor(i2 / this.heightmaps.widthSegments));
 
@@ -243,6 +242,10 @@ var Terrain3 = class extends Composite {
             attrib.position.setXYZ(i + 3, v2.x, v2.y, v2.z);
             attrib.position.setXYZ(i + 4, v3.x, v3.y, v3.z);
             attrib.position.setXYZ(i + 5, v1.x, v1.y, v1.z);
+        }*/
+
+        for (var i = 0; i < attrib.position.count; i++) {
+            attrib.position.array[i * 3 + 1] = map.map[i];
         }
 
         attrib.position.needsUpdate = true;
@@ -251,7 +254,8 @@ var Terrain3 = class extends Composite {
     }
     setMesh(material) {
         var topGeo = new THREE.PlaneGeometry(this.terrainWidth, this.terrainDepth, this.heightmaps.widthSegments, this.heightmaps.depthSegments);
-        topGeo = topGeo.toNonIndexed();
+        /*topGeo = topGeo.toNonIndexed();*/
+        
         topGeo.rotateX(-Math.PI / 2);
         var topAttrib = topGeo.attributes;
         this.calculateMeshVertices(topGeo, this.heightmaps.top);
