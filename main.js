@@ -28,20 +28,12 @@ var mouse = new THREE.Vector2();
 
 var world = new World();
 world.setIterations(4);
-var player = new Point({ global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 1500, 0) } }, local: { body: { mass: 10 } } });
+var player = new Point({ global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 1500, 0) } }, local: { body: { mass: 50 } } });
 player.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
 
 player.addToScene(scene);
 world.addComposite(player);
 
-// var playerPart = new Point();
-// playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
-// playerPart.addToScene(scene);
-// playerPart.local.body.mass = 100;
-// playerPart.local.body.position.x += 0;
-// playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
-// player.add(playerPart);
-// world.addComposite(playerPart);
 
 
 var addToPlayer = function(pos, mass = 10){
@@ -58,10 +50,15 @@ var addToPlayer = function(pos, mass = 10){
     world.addComposite(playerPart);
 }
 
-for(var i = 0; i < 30; i++){
-    addToPlayer(new Vector3(Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50));
-
+for(var i = 0; i < 8; i++){
+    for(var j = 0; j < 8; j++){
+        var v = new Vector3(i * 20, 0, j * 20);
+        addToPlayer(v.add(new Vector3(0, -1400, 0)));
+    }
 }
+
+//var v = new Vector3(Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50);
+//addToPlayer(v.add(new Vector3(0, -1200, 0)), 3);
 
 
 player.setLocalFlag(Composite.FLAGS.CENTER_OF_MASS, true);
@@ -153,12 +150,13 @@ scene.add(light);
 
 var terrain1 = Terrain3.from2dArrays(topArray, topArray);
 var extension = Math.random() < 0.5 ? ".png" : ".jpg";
+extension = ".png";
 var dim = extension == ".jpg" ? 512 : 1536;
 var topArray = generate2dHeightmap(dim, dim);
 
 var terrain1 = Terrain3.fromDimensions(dim,dim);
 
-terrain1.setTerrainScale(40);
+terrain1.setTerrainScale(80);
 
 
 var terrain1Material = new THREE.MeshPhongMaterial({ color: 0xFFFF00, vertexColors: false });
@@ -170,7 +168,7 @@ var img = new Image();
 img.src = "h" + extension;
 
 img.onload = function () {
-    var arr = Terrain3.getArrayFromImage(img, dim == 512 ? 12 : 48);
+    var arr = Terrain3.getArrayFromImage(img, dim == 512 ? 12 : 160);
     var terr = Terrain3.from2dArrays(arr, arr);
     terrain1.setMaps(terr.heightmaps.top.map, terr.heightmaps.bottom.map);
     terrain1.balance();
@@ -288,8 +286,7 @@ function render() {
         }
     }
     
-    var delta = cameraControls.getDelta(camera).scale(10 * player.global.body.mass * world.deltaTime);
-    //player.global.body.position.addInPlace(delta.scale(world.deltaTime));
+    var delta = cameraControls.getDelta(camera).scale(5 * player.global.body.mass * world.deltaTime);
     player.applyForce(delta, player.global.body.position);
     var vel = player.global.body.getVelocity();
     var ogvel = vel.copy();

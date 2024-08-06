@@ -193,6 +193,7 @@ var SpatialHash = class {
         }
         return this._query(this.ids[id].hitbox, new Set(), this.ids[id].hash);
     }
+    
 };
 
 /*

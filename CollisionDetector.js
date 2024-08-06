@@ -11,7 +11,8 @@ var Contact = (typeof (Contact) != "undefined") ? Contact : require("./Contact")
 var CollisionDetector = class {
 
     static seperatorCharacter = ":";
-    static penetrationCoefficient = 10;
+    static penetrationCoefficient = 1;
+    static penetrationMax = 4;
 
     constructor(options) {
         this.pairs = options?.pairs ?? new Map();
@@ -19,7 +20,7 @@ var CollisionDetector = class {
         this.contacts = options?.contacts ?? [];
     }
 
-    inPairs(pairs, shape1, shape2) {
+    inPairs(shape1, shape2) {
         if (shape1 == shape2) {
             return true;
         }
@@ -108,7 +109,9 @@ var CollisionDetector = class {
         }
 
         for (var [key, value] of map) {
+
             var inverseLength = 1 / value.length;
+            
             for (var i = 0; i < value.length; i++) {
                 var contact = value[i];
 
@@ -118,14 +121,13 @@ var CollisionDetector = class {
                 contact.body1.applyForce(impulse.scale(inverseLength), contact.point);*/
 
                 var impactSpeed = contact.velocity.dot(contact.normal);
-
-                var normalForce = -1 * contact.body1.global.body.mass * impactSpeed + this.constructor.penetrationCoefficient * contact.penetration * contact.body1.global.body.mass;
+                var normalForce = -1 * contact.body1.global.body.mass * impactSpeed + Math.min(this.constructor.penetrationCoefficient * contact.penetration, this.constructor.penetrationMax) * contact.body1.global.body.mass;
 
                 var tangential = contact.velocity.projectOntoPlane(contact.normal);
                 var maxFriction = tangential.magnitude() * contact.body1.global.body.mass;
                 tangential.normalizeInPlace();
 
-                var friction = normalForce * 1;
+                var friction = normalForce * 0;
 
                 if(normalForce < 0){
                     normalForce = 0;
@@ -137,12 +139,13 @@ var CollisionDetector = class {
                 force.addInPlace(tangential.scale(-1 * Math.min(maxFriction, friction)));
                 
                 contact.body1.maxParent.applyForce(force.scale(inverseLength), contact.point);
-                
             }
             for(var i = 0; i < value.length; i++){
                 var contact = value[i];
-                contact.body1.translate(new Vector3(0, contact.penetration * inverseLength, 0));
+                
+                contact.body1.translate(contact.normal.scale(contact.penetration * inverseLength));
             }
+            
         }
         this.contacts.length = 0;
     }
@@ -187,40 +190,47 @@ var CollisionDetector = class {
         var normal = new Vector3(0,0,0);
         var height1 = triangle.getHeight(heightmapPosPrev);
         var height2 = triangle.getHeight(heightmapPosPrev);
-        if(1==0 && heightmapPos.y > height1.y && heightmapPosPrev.y > height2.y){
+        // if(1==0 && heightmapPos.y > height1.y && heightmapPosPrev.y > height2.y){
             
-            top = true;
-        }
-        else if(1==0 && heightmapPos.y < height1.y && heightmapPosPrev.y < height2.y){
-            top = false;
-        }
-        else{
+        //     top = true;
+        // }
+        // else if(1==0 && heightmapPos.y < height1.y && heightmapPosPrev.y < height2.y){
+        //     top = false;
+        // }
+        // else{
+        //     var triangle2 = triangle.copy();
+        //     triangle2.a = terrain1.translateHeightmapToWorld(triangle2.a);
+        //     triangle2.b = terrain1.translateHeightmapToWorld(triangle2.b);
+        //     triangle2.c = terrain1.translateHeightmapToWorld(triangle2.c);
+
+        //     var velocity = point1.global.body.getVelocity();//pointPos.subtract(p);
+        //     normal = triangle2.getNormal();
+        //     var pointVelocity = velocity.dot(normal);
+        //     if(pointVelocity > 0){
+        //         //top = false;
+        //     }
+        // }
+
+        if(top){
+            var height = terrain1.translateHeightmapToWorld(triangleTop.getHeight(heightmapPos));
             var triangle2 = triangle.copy();
             triangle2.a = terrain1.translateHeightmapToWorld(triangle2.a);
             triangle2.b = terrain1.translateHeightmapToWorld(triangle2.b);
             triangle2.c = terrain1.translateHeightmapToWorld(triangle2.c);
+            var normal = triangle2.getNormal();
 
-            var velocity = point1.global.body.getVelocity();//pointPos.subtract(p);
-            normal = triangle2.getNormal();
-            var pointVelocity = velocity.dot(normal);
-            if(pointVelocity > 0){
-                //top = false;
+            var contact = new Contact();
+            contact.normal = normal;
+            //contact.penetration = (new Vector3(0, height.y - pointPos.y, 0)).dot(contact.normal);
+            contact.penetration = triangle2.a.subtract(pointPos).dot(contact.normal);
+            if(contact.penetration < 0){
+                return false;
             }
-        }
-
-        if(top){
-            var height = terrain1.translateHeightmapToWorld(triangleTop.getHeight(heightmapPos));
-            if(pointPos.y < height.y){
-                var contact = new Contact();
-                contact.normal = normal;
-                contact.penetration = height.y - pointPos.y;
-                contact.body1 = point1;
-                contact.body2 = terrain1;
-                contact.point = point1.global.body.position;
-                contact.velocity = point1.getVelocityAtPosition(contact.point).subtractInPlace(terrain1.getVelocityAtPosition(contact.point));
-                return contact;
-                
-            }
+            contact.body1 = point1;
+            contact.body2 = terrain1;
+            contact.point = point1.global.body.position;
+            contact.velocity = point1.getVelocityAtPosition(contact.point).subtractInPlace(terrain1.getVelocityAtPosition(contact.point));
+            return contact;
         }
         else{
             var height = terrain1.translateHeightmapToWorld(triangleBottom.getHeight(heightmapPos));
