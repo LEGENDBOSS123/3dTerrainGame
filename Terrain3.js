@@ -26,23 +26,72 @@ var Terrain3 = class extends Composite {
         this.terrainScale = options?.terrainScale ?? 1;
         this.inverseTerrainScale = options?.inverseTerrainScale ?? 1 / this.terrainScale;
 
-        this.terrainWidth = options?.terrainWidth ?? this.heightmaps.width * this.terrainScale;
-        this.terrainDepth = options?.terrainDepth ?? this.heightmaps.depth * this.terrainScale;
+        this.terrainWidth = options?.terrainWidth ?? this.heightmaps.widthSegments * this.terrainScale;
+        this.terrainDepth = options?.terrainDepth ?? this.heightmaps.depthSegments * this.terrainScale;
+        
+        this.setLocalFlag(this.constructor.FLAGS.OCCUPIES_SPACE, true);
+        
+        this.calculateLocalHitbox();
+        this.calculateGlobalHitbox();
     }
 
-    calculateHitbox() {
+    balance() {
+        var averageHeight = 0;
+        for (var i = 0; i < this.heightmaps.top.map.length; i++) {
+            averageHeight += this.heightmaps.top.map[i] + this.heightmaps.bottom.map[i];
+        }
+        averageHeight /= this.heightmaps.top.map.length * 2;
         
-        var minHeight = Infinity;
-        var maxHeight = -Infinity;
-        for(var i = 0; i < this.heightmaps.top.map.length; i++){
-            maxHeight = Math.max(maxHeight, map.map[i]);
+        for (var i = 0; i < this.heightmaps.top.map.length; i++) {
+            this.heightmaps.top.map[i] -= averageHeight;
+            this.heightmaps.bottom.map[i] -= averageHeight;
         }
 
-        for(var i = 0; i < this.heightmaps.bottom.map.length; i++){
-            minHeight = Math.min(minHeight, map.map[i]);
+        this.calculateLocalHitbox();
+    }
+
+    calculateLocalHitbox() {
+
+        var minHeight = Infinity;
+        var maxHeight = -Infinity;
+        for (var i = 0; i < this.heightmaps.top.map.length; i++) {
+            maxHeight = Math.max(maxHeight, this.heightmaps.top.map[i]);
         }
-        
-        return new Hitbox3();
+
+        for (var i = 0; i < this.heightmaps.bottom.map.length; i++) {
+            minHeight = Math.min(minHeight, this.heightmaps.bottom.map[i]);
+        }
+
+        this.local.hitbox.min = new Vector3(-this.terrainWidth / 2, minHeight, -this.terrainDepth / 2);
+        this.local.hitbox.max = new Vector3(this.terrainWidth / 2, maxHeight, this.terrainDepth / 2);
+
+        return this.local.hitbox;
+    }
+
+    clampToHeightmap(v){
+        return new Vector3(Math.max(0, Math.min(this.heightmaps.widthSegments, v.x)), v.y, Math.max(0, Math.min(this.heightmaps.depthSegments, v.z)));
+    }
+
+    calculateGlobalHitbox() {
+        var localHitbox = this.local.hitbox;
+
+        var updateForVertex = function (v) {
+            this.global.body.rotation.multiplyVector3InPlace(v).addInPlace(this.global.body.position);
+            this.global.hitbox.expandToFitPoint(v);
+        }.bind(this);
+
+        this.global.hitbox.min = new Vector3(Infinity, Infinity, Infinity);
+        this.global.hitbox.max = new Vector3(-Infinity, -Infinity, -Infinity);
+
+        updateForVertex(localHitbox.min.copy());
+        updateForVertex(localHitbox.max.copy());
+        updateForVertex(new Vector3(localHitbox.min.x, localHitbox.min.y, localHitbox.max.z));
+        updateForVertex(new Vector3(localHitbox.min.x, localHitbox.max.y, localHitbox.min.z));
+        updateForVertex(new Vector3(localHitbox.min.x, localHitbox.max.y, localHitbox.max.z));
+        updateForVertex(new Vector3(localHitbox.max.x, localHitbox.min.y, localHitbox.min.z));
+        updateForVertex(new Vector3(localHitbox.max.x, localHitbox.min.y, localHitbox.max.z));
+        updateForVertex(new Vector3(localHitbox.max.x, localHitbox.max.y, localHitbox.min.z));
+        return this.global.hitbox;
     }
 
     setTerrainScale(x) {
@@ -50,6 +99,13 @@ var Terrain3 = class extends Composite {
         this.inverseTerrainScale = 1 / x;
         this.terrainWidth = this.heightmaps.widthSegments * this.terrainScale;
         this.terrainDepth = this.heightmaps.depthSegments * this.terrainScale;
+        this.calculateLocalHitbox();
+    }
+
+    setMaps(top, bottom) {
+        this.heightmaps.top.map = top;
+        this.heightmaps.bottom.map = bottom;
+        this.calculateLocalHitbox();
     }
 
 
@@ -72,7 +128,7 @@ var Terrain3 = class extends Composite {
         });
     }
 
-    static getArrayFromImage(map, img, scale = 1 / 255) {
+    static getArrayFromImage(img, scale = 1 / 255) {
         var canvas = document.createElement("canvas");
         canvas.width = img.width;
         canvas.height = img.height;
@@ -87,12 +143,12 @@ var Terrain3 = class extends Composite {
             for (var x = -amount; x <= amount; x++) {
                 for (var y = -amount; y <= amount; y++) {
                     var index = i + y * 4 * img.width + x * 4;
-                    var a = (data[index] + data[index+1] + data[index+2])/3;
+                    var a = (data[index] + data[index + 1] + data[index + 2]) / 3;
                     sum += a ? a : 0;
                     count++;
                 }
             }
-            heightmaps.push(sum/count * scale);
+            heightmaps.push(sum / count * scale);
         }
         return heightmaps;
     }
@@ -115,11 +171,8 @@ var Terrain3 = class extends Composite {
         this.heightmaps.bottom.map = new Float32Array(bottom.flat());
         this.heightmaps.bottom.hitbox = this.makeHitbox(this.heightmaps.bottom);
 
+        this.calculateLocalHitbox();
         return this;
-    }
-
-    getMeshIndex(v, alternate = false) {
-        return (v.z * this.heightmaps.widthSegments + v.x) * 6 + (alternate ? 3 : 0);
     }
 
     getNearestTile(v) {
@@ -148,16 +201,18 @@ var Terrain3 = class extends Composite {
         v3.z++;
         v3.y = this.getHeight(map, v3);
 
+        
+
+        if (v2.x - v.x > v.z - v1.z) {
+            return new Triangle(v2, v1, v3);
+        }
+
         var v4 = v1.copy();
         v4.x++;
         v4.z++;
         v4.y = this.getHeight(map, v4);
 
-        if (v2.x - v.x > v.z - v1.z) {
-            return new Triangle(v1, v2, v3);
-        }
-
-        return new Triangle(v3, v2, v4);
+        return new Triangle(v2, v3, v4);
     }
 
     getHeightFromHeightmap(map, v) {
@@ -168,15 +223,7 @@ var Terrain3 = class extends Composite {
             return null;
         }
 
-
-        var areaABC = Math.abs((triangle.a.x * (triangle.b.z - triangle.c.z) + triangle.b.x * (triangle.c.z - triangle.a.z) + triangle.c.x * (triangle.a.z - triangle.b.z)) / 2.0);
-        var areaPBC = Math.abs((translated_v.x * (triangle.b.z - triangle.c.z) + triangle.b.x * (triangle.c.z - translated_v.z) + triangle.c.x * (translated_v.z - triangle.b.z)) / 2.0);
-        var areaPCA = Math.abs((triangle.a.x * (translated_v.z - triangle.c.z) + translated_v.x * (triangle.c.z - triangle.a.z) + triangle.c.x * (triangle.a.z - translated_v.z)) / 2.0);
-        var areaPAB = Math.abs((triangle.a.x * (triangle.b.z - translated_v.z) + triangle.b.x * (translated_v.z - triangle.a.z) + translated_v.x * (triangle.a.z - triangle.b.z)) / 2.0);
-
-        translated_v.y = (areaPBC * triangle.a.y + areaPCA * triangle.b.y + areaPAB * triangle.c.y) / areaABC;
-
-        return this.translateHeightmapToWorld(translated_v);
+        return this.translateHeightmapToWorld(triangle.getHeight(translated_v));
     }
 
     translateWorldToHeightmap(v) {
@@ -255,7 +302,7 @@ var Terrain3 = class extends Composite {
     setMesh(material) {
         var topGeo = new THREE.PlaneGeometry(this.terrainWidth, this.terrainDepth, this.heightmaps.widthSegments, this.heightmaps.depthSegments);
         /*topGeo = topGeo.toNonIndexed();*/
-        
+
         topGeo.rotateX(-Math.PI / 2);
         var topAttrib = topGeo.attributes;
         this.calculateMeshVertices(topGeo, this.heightmaps.top);
@@ -278,7 +325,7 @@ var Terrain3 = class extends Composite {
 
         this.mesh.add(topMesh);
     }
-}
+};
 
 if (typeof (module) != "undefined") {
     module.exports = Terrain3;

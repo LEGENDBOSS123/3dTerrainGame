@@ -7,13 +7,28 @@ var Sphere = class extends Composite {
         super(options);
         this.shape = this.constructor.SHAPES.SPHERE;
         this.radius = options?.radius ?? 1;
+        this.setLocalFlag(this.constructor.FLAGS.OCCUPIES_SPACE, true);
+        this.calculateLocalHitbox();
+        this.calculateGlobalHitbox();
+    }
+
+    calculateLocalHitbox() {
+        this.local.hitbox.min = new Vector3(-this.radius, -this.radius, -this.radius);
+        this.local.hitbox.max = new Vector3(this.radius, this.radius, this.radius);
+        return this.hitbox;
+    }
+
+    calculateGlobalHitbox() {
+        this.global.hitbox.min = this.local.hitbox.min.add(this.global.body.position);
+        this.global.hitbox.max = this.local.hitbox.max.add(this.global.body.position);
+        return this.global.hitbox;
     }
 
     setMesh(options){
         var geometry = options?.geometry ?? new THREE.SphereGeometry(this.radius, 16, 16);
         this.mesh = new THREE.Mesh(geometry, options?.material ?? new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: true }));
     }
-}
+};
 
 
 if (typeof (module) != "undefined") {

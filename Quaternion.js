@@ -35,6 +35,15 @@ var Quaternion = class {
         return new Vector3(finalQ.x, finalQ.y, finalQ.z);
     }
 
+    multiplyVector3InPlace(v) {
+        var q = new this.constructor(0, v.x, v.y, v.z);
+        var finalQ = this.multiply(q).multiply(this.conjugate());
+        v.x = finalQ.x;
+        v.y = finalQ.y;
+        v.z = finalQ.z;
+        return v;
+    }
+
     conjugate() {
         return new this.constructor(this.w, -this.x, -this.y, -this.z);
     }
@@ -108,7 +117,7 @@ var Quaternion = class {
                         w?.y ?? w[2] ?? y ?? 0,
                         w?.z ?? w[3] ?? z ?? 0);
     }
-}
+};
 
 
 if (typeof (module) != "undefined") {

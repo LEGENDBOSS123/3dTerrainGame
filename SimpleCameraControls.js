@@ -69,6 +69,6 @@ var SimpleCameraControls = class {
         delta.normalize();
         delta.multiplyScalar(this.speed);
         this.reset();
-        return delta;
+        return Vector3.from(delta);
     }
 }

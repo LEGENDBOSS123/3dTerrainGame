@@ -1,7 +1,7 @@
 var Vector3 = (typeof (Vector3) != "undefined") ? Vector3 : require("./Vector3");
 
 var Triangle = class {
-    constructor(a, b, c) {
+    constructor(a = new Vector3(), b = new Vector3(), c = new Vector3()) {
         this.a = a;
         this.b = b;
         this.c = c;
@@ -39,6 +39,19 @@ var Triangle = class {
         var v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 
         return (u >= 0) && (v >= 0) && (u + v < 1);
+    }
+
+    getHeight(v){
+        var areaABC = Math.abs((this.a.x * (this.b.z - this.c.z) + this.b.x * (this.c.z - this.a.z) + this.c.x * (this.a.z - this.b.z)) / 2.0);
+        var areaPBC = Math.abs((v.x * (this.b.z - this.c.z) + this.b.x * (this.c.z - v.z) + this.c.x * (v.z - this.b.z)) / 2.0);
+        var areaPCA = Math.abs((this.a.x * (v.z - this.c.z) + v.x * (this.c.z - this.a.z) + this.c.x * (this.a.z - v.z)) / 2.0);
+        var areaPAB = Math.abs((this.a.x * (this.b.z - v.z) + this.b.x * (v.z - this.a.z) + v.x * (this.a.z - this.b.z)) / 2.0);
+
+        return new Vector3(v.x, (areaPBC * this.a.y + areaPCA * this.b.y + areaPAB * this.c.y) / areaABC, v.z);
+    }
+
+    copy(){
+        return new Triangle(this.a, this.b, this.c);
     }
 
     static from(a, b, c) {

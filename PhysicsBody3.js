@@ -6,6 +6,7 @@ var PhysicsBody3 = class {
         this.mass = options?.mass ?? 1;
         this.inverseMass = options?.inverseMass ?? 1 / this.mass;
         this.position = Vector3.from(options?.position);
+        this.actualPreviousPosition = Vector3.from(options?.actualPreviousPosition ?? this.position);
         this.previousPosition = Vector3.from(options?.previousPosition ?? this.position);
         this.acceleration = Vector3.from(options?.acceleration);
         this.netForce = Vector3.from(options?.netForce);
@@ -20,6 +21,10 @@ var PhysicsBody3 = class {
         var velocity = this.getVelocity();
         this.position = position.copy();
         this.setVelocity(velocity);
+    }
+
+    getVelocityAtPosition(position) {
+        return this.getVelocity().add(this.getAngularVelocity().cross(position.subtract(this.position)));
     }
 
     getVelocity() {
@@ -47,30 +52,32 @@ var PhysicsBody3 = class {
         this.angularVelocity = angularVelocity.copy();
     }
 
-    updatePosition(deltaTime, velocity = this.getVelocity()) {
+    updatePosition(velocity = this.getVelocity(), world) {
         this.position.addInPlace(velocity);
-        this.position.addInPlace(this.acceleration.scale(deltaTime * deltaTime));
-        this.position.addInPlace(this.netForce.scale(this.inverseMass * deltaTime * deltaTime));
+        this.position.addInPlace(this.acceleration.scale(world.deltaTimeSquared * 0.5));
+        this.position.addInPlace(this.netForce.scale(this.inverseMass * 0.5));
     }
 
-    updateRotation(deltaTime = 0) {
-        this.angularVelocity.addInPlace(this.angularAcceleration.scale(deltaTime * deltaTime));
-        this.angularVelocity.addInPlace(this.netTorque.scale(this.inverseMass * deltaTime * deltaTime));
+    updateRotation(world) {
+        this.angularVelocity.addInPlace(this.angularAcceleration.scale(world.deltaTimeSquared));
+        this.angularVelocity.addInPlace(this.netTorque.scale(this.inverseMass / 6000));
 
         var angularVelocityQuaternion = new Quaternion(1, this.angularVelocity.x * 0.5, this.angularVelocity.y * 0.5, this.angularVelocity.z * 0.5);
 
         this.rotation = angularVelocityQuaternion.multiply(this.rotation).normalizeInPlace();
     }
 
-    update(timeDelta = 0) {
+    update(world) {
         var velocity = this.getVelocity();
-
+        
+        this.actualPreviousPosition = this.position.copy();
         this.previousPosition = this.position.copy();
-
-        this.updatePosition(timeDelta, velocity);
+        
+        
+        this.updatePosition(velocity, world);
         this.netForce.reset();
 
-        this.updateRotation(timeDelta);
+        this.updateRotation(world);
         this.netTorque.reset();
     }
 }

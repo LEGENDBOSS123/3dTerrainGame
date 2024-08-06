@@ -5,6 +5,10 @@ var Vector3 = class {
         this.z = z;
     }
 
+    equals(v) {
+        return this.x == v.x && this.y == v.y && this.z == v.z;
+    }
+
     projectOnto(v) {
         return v.scale(this.dot(v) / v.magnitudeSquared());
     }
@@ -163,11 +167,17 @@ var Vector3 = class {
 
     normalize() {
         var mag = this.magnitude();
+        if(mag == 0){
+            return this;
+        }
         return new this.constructor(this.x / mag, this.y / mag, this.z / mag);
     }
 
     normalizeInPlace() {
         var mag = this.magnitude();
+        if(mag == 0){
+            return this;
+        }
         this.x /= mag;
         this.y /= mag;
         this.z /= mag;
@@ -227,6 +237,10 @@ var Vector3 = class {
         return [this.x, this.y, this.z];
     }
 
+    toString() {
+        return `(${this.x}, ${this.y}, ${this.z})`;
+    }
+
     static from(x = 0, y = 0, z = 0) {
         return new this(x?.x ?? x[0] ?? x ?? 0,
                         x?.y ?? x[1] ?? y ?? 0,
@@ -235,6 +249,10 @@ var Vector3 = class {
 
     static fromJSON(jsondata) {
         return new this(jsondata.x, jsondata.y, jsondata.z);
+    }
+
+    [Symbol.iterator]() {
+        return [this.x, this.y, this.z][Symbol.iterator]();
     }
 }
 

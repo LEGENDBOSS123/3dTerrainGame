@@ -10,6 +10,20 @@ var Hitbox3 = class {
         return new this.constructor(this.min, this.max);
     }
 
+    equals(h2) {
+        return this.min.equals(h2.min) && this.max.equals(h2.max);
+    }
+
+    expandToFitPoint(v){
+        this.min.x = Math.min(this.min.x, v.x);
+        this.min.y = Math.min(this.min.y, v.y);
+        this.min.z = Math.min(this.min.z, v.z);
+        this.max.x = Math.max(this.max.x, v.x);
+        this.max.y = Math.max(this.max.y, v.y);
+        this.max.z = Math.max(this.max.z, v.z);
+        return this;
+    }
+
     reorder(){
         var temp = 0;
         if (this.min.x > this.max.x) {
@@ -77,15 +91,18 @@ var Hitbox3 = class {
     }
 
     static fromVectors(vectors){
-        var min = new Vector3(-Infinity, -Infinity, -Infinity);
-        var max = new Vector3(Infinity, Infinity, Infinity);
+        var hitbox = new Hitbox3(new Vector3(Infinity, Infinity, Infinity), new Vector3(-Infinity, -Infinity, -Infinity));
         for(var v of vectors){
-            min.x = Math.min(min.x, v.x);
-            min.y = Math.min(min.y, v.y);
-            min.z = Math.min(min.z, v.z);
-            max.x = Math.max(max.x, v.x);
-            max.y = Math.max(max.y, v.y);
-            max.z = Math.max(max.z, v.y);
+            hitbox.expandToFitPoint(v);
+        }
+        return new this(min, max);
+    }
+
+    static fromHitboxes(hitboxes){
+        var hitbox = new Hitbox3(new Vector3(Infinity, Infinity, Infinity), new Vector3(-Infinity, -Infinity, -Infinity));
+        for(var h of hitboxes){
+            hitbox.expandToFitPoint(h.min);
+            hitbox.expandToFitPoint(h.max);
         }
         return new this(min, max);
     }

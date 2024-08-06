@@ -7,6 +7,7 @@ var CameraTHREEJS = class {
         this.minPullback = options?.minPullback ?? 0;
         this.pullback = this.setPullback(options?.pullback ?? 0);
         this.camera = options?.camera;
+        this.origin = Vector3.from(options?.origin);
     }
     
     rotateX(angle) {
@@ -59,9 +60,8 @@ var CameraTHREEJS = class {
         var normalizedLookAt = this.getLookAt().normalize();
 
         this.camera.lookAt(camera.position.clone().add(normalizedLookAt));
-        this.camera.position.x = entity.position.x;
-        this.camera.position.y = entity.position.y;
-        this.camera.position.z = entity.position.z;
+        this.origin.set(this.origin.lerp(entity.position, 0.5));
+        this.camera.position.set(...this.origin);
         this.camera.position.add(normalizedLookAt.scale(-this.pullback));
     }
 }

@@ -27,15 +27,112 @@ var mouse = new THREE.Vector2();
 
 
 var world = new World();
+world.setIterations(4);
+var player = new Point({ global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 1500, 0) } }, local: { body: { mass: 100 } } });
+player.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
 
-var player = new Sphere({ global: { body: { acceleration: new Vector3(0, -12.23, 0), position: new Vector3(0, 100, 0) } }, local: { body: { mass: 10 } } });
-player.setMesh({ material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
-player.mesh.receiveShadow = true;
-player.mesh.castShadow = true;
 player.addToScene(scene);
 world.addComposite(player);
 
-console.log(player.local.body.mass);
+// var playerPart = new Point();
+// playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+// playerPart.addToScene(scene);
+// playerPart.local.body.mass = 100;
+// playerPart.local.body.position.x += 0;
+// playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
+// player.add(playerPart);
+// world.addComposite(playerPart);
+
+if(1 == 1){
+    var aaa = 50;
+    var playerPart = new Point();
+    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+    playerPart.addToScene(scene);
+    playerPart.local.body.mass = 10;
+    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
+    player.add(playerPart);
+
+    world.addComposite(playerPart);
+    var playerPart = new Point();
+    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+    playerPart.addToScene(scene);
+    playerPart.local.body.mass = 10;
+    playerPart.local.body.position.x += aaa;
+    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
+    player.add(playerPart);
+
+    world.addComposite(playerPart);
+
+    var playerPart = new Point();
+    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+    playerPart.addToScene(scene);
+    playerPart.local.body.mass = 10;
+    playerPart.local.body.position.z += aaa;
+    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
+    player.add(playerPart);
+    world.addComposite(playerPart);
+
+    var playerPart = new Point();
+    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+    playerPart.addToScene(scene);
+    playerPart.local.body.mass = 10;
+    playerPart.local.body.position.x += aaa;
+    playerPart.local.body.position.z += aaa;
+    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
+    player.add(playerPart);
+    world.addComposite(playerPart);
+
+    var playerPart = new Point();
+    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+    playerPart.addToScene(scene);
+    playerPart.local.body.mass = 10;
+    playerPart.local.body.position.x += aaa;
+    playerPart.local.body.position.z += aaa;
+    playerPart.local.body.position.y += aaa;
+    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
+    player.add(playerPart);
+    world.addComposite(playerPart);
+
+
+    var playerPart = new Point();
+    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+    playerPart.addToScene(scene);
+    playerPart.local.body.mass = 10;
+    playerPart.local.body.position.z += aaa;
+    playerPart.local.body.position.y += aaa;
+    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
+    player.add(playerPart);
+    world.addComposite(playerPart);
+
+
+    var playerPart = new Point();
+    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+    playerPart.addToScene(scene);
+    playerPart.local.body.mass = 10;
+    playerPart.local.body.position.x += aaa;
+    playerPart.local.body.position.y += aaa;
+    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
+    player.add(playerPart);
+    world.addComposite(playerPart);
+
+
+
+    var playerPart = new Point();
+    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+    playerPart.addToScene(scene);
+    playerPart.local.body.mass = 10;
+    playerPart.local.body.position.y += aaa;
+    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
+    player.add(playerPart);
+    world.addComposite(playerPart);
+}
+player.setLocalFlag(Composite.FLAGS.CENTER_OF_MASS, true);
+
+// var ball = new Point({global:{body:{acceleration: new Vector3(0, -0.2, 0), position:new Vector3(0,100,0)}}});
+// ball.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+// ball.local.body.mass = 1;
+// ball.addToScene(scene);
+// world.addComposite(ball);
 
 var skybox = new THREE.SphereGeometry(10000, 64, 64);
 var skyboxMaterial = new THREE.MeshBasicMaterial({ color: 0x8CBED6, side: THREE.BackSide });
@@ -67,7 +164,7 @@ const csm = new THREE.CSM({
 });*/
 
 var gameCamera = new CameraTHREEJS({ camera: camera, pullback: 100, maxPullback: 500 });
-var cameraControls = new SimpleCameraControls({ camera: gameCamera, speed: 1, pullbackRate: 4 });
+var cameraControls = new SimpleCameraControls({ camera: gameCamera, speed: 0.05, pullbackRate: 4 });
 var keyListener = new Keysheld(window);
 
 
@@ -88,7 +185,7 @@ var generate2dHeightmap = function (xDim, zDim) {
     for (var x = 0; x < xDim; x++) {
         var row = [];
         for (var z = 0; z < zDim; z++) {
-            row.push(noise.perlin2(x / 10, z / 10) * 75 + noise.perlin2(x / 10, z / 10) * Math.sin(x/10) * 75 
+            row.push(noise.perlin2(x / 10, z / 10) * 120 + noise.perlin2(x / 10, z / 10) * Math.sin(x/10) * 75 
             + (noise.perlin2(x / 10, z / 10)+1) * Math.sin((noise.simplex2(x + z, z - x))/100)**4 * 340);
         }
         map.push(row);
@@ -101,7 +198,7 @@ var generate2dHeightmap = function (xDim, zDim) {
 
 var topArray = generate2dHeightmap(200, 200);
 
-var topArray2 = generate2dHeightmap(20,20);
+var topArray2 = generate2dHeightmap(200,200);
 
 var ambientLight = new THREE.AmbientLight(0xbbbbbb);
 scene.add(ambientLight);
@@ -119,21 +216,26 @@ scene.add(light);
 var terrain1 = Terrain3.from2dArrays(topArray, topArray);
 var extension = Math.random() < 0.5 ? ".png" : ".jpg";
 var dim = extension == ".jpg" ? 512 : 1536;
+var topArray = generate2dHeightmap(dim, dim);
+
 var terrain1 = Terrain3.fromDimensions(dim,dim);
 
 terrain1.setTerrainScale(40);
 
 
-var terrain1Material = new THREE.MeshPhongMaterial({ color: 0xFFFF00, vertexColors: true });
+var terrain1Material = new THREE.MeshPhongMaterial({ color: 0xFFFF00, vertexColors: false });
 terrain1Material.wireframe = false;
-
+terrain1.setMaps(topArray.flat(), topArray.flat());
+terrain1.balance();
 
 var img = new Image();
 img.src = "h" + extension;
 
 img.onload = function () {
-    var arr = Terrain3.getArrayFromImage(terrain1Material.map, img, dim == 512 ? 6 : 48);
-    terrain1.heightmaps.top.map = Terrain3.from2dArrays(arr, arr).heightmaps.top.map;
+    var arr = Terrain3.getArrayFromImage(img, dim == 512 ? 12 : 48);
+    var terr = Terrain3.from2dArrays(arr, arr);
+    terrain1.setMaps(terr.heightmaps.top.map, terr.heightmaps.bottom.map);
+    terrain1.balance();
     if(terrain1.mesh){
         terrain1.calculateMeshVertices(terrain1.mesh.children[0].geometry, terrain1.heightmaps.top);
     }
@@ -155,21 +257,19 @@ terrain1.addToScene(scene);
 terrain1.setMesh(terrain1Material);
     terrain1.mesh.receiveShadow = true;
     terrain1.mesh.castShadow = true;
-terrain1.local.body.setPosition(new Vector3(-290, -50, 0));
+terrain1.local.body.setPosition(new Vector3(-290, 0, 0));
 var terrain2 = Terrain3.from2dArrays(topArray2, topArray2);
-terrain2.setTerrainScale(4);
+terrain2.setTerrainScale(30);
 var terrain2Material = new THREE.MeshPhongMaterial({ color: 0x00FFFF });
-terrain2Material.wireframe = true;
+terrain2Material.wireframe = false;
 terrain2.setMesh(terrain2Material);
 terrain2.addToScene(scene);
 terrain2.global.body.setPosition(new Vector3(0, 0, 0));
-
 terrain2.add(terrain1);
 world.addComposite(terrain2);
 
+world.addComposite(terrain1);
 
-
-player.global.body.position.y = 10000;
 player.global.body.setVelocity(new Vector3());
 
 
@@ -237,19 +337,9 @@ function render() {
     if (keyListener.isHeld("KeyI")) {
         cameraControls.zoomIn();
     }
-
-    var aaa33 = terrain1.getHeightFromHeightmap(terrain1.heightmaps.top, player.global.body.position.copy());
+    world.step()
     var grounded = false;
-    if (aaa33 != null) {
-        aaa33.y += 2;
 
-        if (player.global.body.position.y < aaa33.y) {
-            grounded = true;
-            player.global.body.position = new Vector3(aaa33.x, aaa33.y, aaa33.z);
-            var vel = player.global.body.getVelocity();
-            //player.global.body.setVelocity(new Vector3(vel.x, 0, vel.z));
-        }
-    }
     if (!grounded) {
         cameraControls.movement.up = false;
     }
@@ -259,21 +349,22 @@ function render() {
             player.global.body.setVelocity(new Vector3(vel.x, vel.y + 10, vel.z));
         }
     }
-    player.global.body.position.addInPlace(cameraControls.getDelta(camera));
+    
+    var delta = cameraControls.getDelta(camera).scale(500);
+    //player.global.body.position.addInPlace(delta.scale(world.deltaTime));
+    player.applyForce(delta, player.global.body.position);
     var vel = player.global.body.getVelocity();
     var ogvel = vel.copy();
     
     vel.scaleInPlace(0.95);
     vel.y = ogvel.y;
-    player.global.body.setVelocity(vel);
-
-    player.updateAll(120 / 1000);
-    terrain2.updateAll(120 / 1000);
+    //player.global.body.setVelocity(vel);
+   
+    
     gameCamera.update(player.global.body);
     if (skyboxMesh) {
         skyboxMesh.position.copy(camera.position);
     }
-    //csm.update(camera.matrix);
     renderer.render(scene, camera);
 
     stats.end();
