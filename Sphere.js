@@ -24,6 +24,19 @@ var Sphere = class extends Composite {
         return this.global.hitbox;
     }
 
+    calculateLocalMomentOfInertia() {
+        this.local.body.momentOfInertia = Matrix3.zero();
+        var I = (2/5) * this.local.body.mass * this.radius * this.radius;
+        this.local.body.momentOfInertia.set(I, 0, 0);
+        this.local.body.momentOfInertia.set(I, 1, 1);
+        this.local.body.momentOfInertia.set(I, 2, 2);
+        return this.local.body.momentOfInertia;
+    }
+
+    rotateLocalMomentOfInertia(quaternion) {
+        return this.local.body.momentOfInertia;
+    }
+
     setMesh(options){
         var geometry = options?.geometry ?? new THREE.SphereGeometry(this.radius, 16, 16);
         this.mesh = new THREE.Mesh(geometry, options?.material ?? new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: true }));

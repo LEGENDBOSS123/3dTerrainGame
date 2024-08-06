@@ -11,6 +11,7 @@ var Contact = (typeof (Contact) != "undefined") ? Contact : require("./Contact")
 var CollisionDetector = class {
 
     static seperatorCharacter = ":";
+    static penetrationCoefficient = 10;
 
     constructor(options) {
         this.pairs = options?.pairs ?? new Map();
@@ -118,13 +119,13 @@ var CollisionDetector = class {
 
                 var impactSpeed = contact.velocity.dot(contact.normal);
 
-                var normalForce = -1 * contact.body1.maxParent.global.body.mass * impactSpeed;
+                var normalForce = -1 * contact.body1.global.body.mass * impactSpeed + this.constructor.penetrationCoefficient * contact.penetration * contact.body1.global.body.mass;
 
                 var tangential = contact.velocity.projectOntoPlane(contact.normal);
-                var maxFriction = tangential.magnitude() * contact.body1.maxParent.global.body.mass;
+                var maxFriction = tangential.magnitude() * contact.body1.global.body.mass;
                 tangential.normalizeInPlace();
 
-                var friction = normalForce * 0.9;
+                var friction = normalForce * 1;
 
                 if(normalForce < 0){
                     normalForce = 0;
@@ -133,9 +134,9 @@ var CollisionDetector = class {
 
                 var force = new Vector3();
                 force.addInPlace(contact.normal.scale(normalForce));
-                force.addInPlace(tangential.scale(-1 * Math.min(maxFriction * 0.5, friction)));
-                //console.log(normalForce);
-                contact.body1.applyForce(force.scale(inverseLength), contact.point);
+                force.addInPlace(tangential.scale(-1 * Math.min(maxFriction, friction)));
+                
+                contact.body1.maxParent.applyForce(force.scale(inverseLength), contact.point);
                 
             }
             for(var i = 0; i < value.length; i++){

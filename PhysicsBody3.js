@@ -1,10 +1,15 @@
 var Vector3 = (typeof (Vector3) != "undefined") ? Vector3 : require("./Vector3");
 var Quaternion = (typeof (Quaternion) != "undefined") ? Quaternion : require("./Quaternion");
+var Matrix3 = (typeof (Matrix3) != "undefined") ? Matrix3 : require("./Matrix3");
 
 var PhysicsBody3 = class {
     constructor(options) {
         this.mass = options?.mass ?? 1;
         this.inverseMass = options?.inverseMass ?? 1 / this.mass;
+
+        this.momentOfInertia = options?.momentOfInertia ?? new Matrix3();
+        this.inverseMomentOfInertia = options?.inverseMomentOfInertia ?? new Matrix3();
+
         this.position = Vector3.from(options?.position);
         this.actualPreviousPosition = Vector3.from(options?.actualPreviousPosition ?? this.position);
         this.previousPosition = Vector3.from(options?.previousPosition ?? this.position);
@@ -60,7 +65,11 @@ var PhysicsBody3 = class {
 
     updateRotation(world) {
         this.angularVelocity.addInPlace(this.angularAcceleration.scale(world.deltaTimeSquared));
-        this.angularVelocity.addInPlace(this.netTorque.scale(this.inverseMass / 6000));
+        if(this.netTorque.magnitudeSquared() > 0) {
+            this.inverseMomentOfInertia = this.momentOfInertia.invert();
+            var deltaAngularVelocity = this.inverseMomentOfInertia.multiplyVector3(this.netTorque);
+            this.angularVelocity.addInPlace(deltaAngularVelocity.scale(1));
+        }
 
         var angularVelocityQuaternion = new Quaternion(1, this.angularVelocity.x * 0.5, this.angularVelocity.y * 0.5, this.angularVelocity.z * 0.5);
 

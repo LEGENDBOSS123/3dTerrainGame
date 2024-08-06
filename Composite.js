@@ -46,6 +46,43 @@ var Composite = class {
 
     }
 
+    calculateLocalMomentOfInertia() {
+        this.local.body.momentOfInertia = Matrix3.zero();
+        return this.local.body.momentOfInertia;
+    }
+
+    rotateLocalMomentOfInertia(quaternion) {
+        var rotationMatrix = quaternion.toMatrix3();
+        var result = rotationMatrix.multiply(this.local.body.momentOfInertia).multiply(rotationMatrix.transpose());
+        return result;
+    }
+
+    calculateGlobalMomentOfInertia() {
+        this.calculateLocalMomentOfInertia()
+        this.global.body.momentOfInertia.setMatrix3(this.rotateLocalMomentOfInertia(this.global.body.rotation));
+        var mass = this.local.body.mass;
+        var dx = this.maxParent.global.body.position.x - this.global.body.position.x;
+        var dy = this.maxParent.global.body.position.y - this.global.body.position.y;
+        var dz = this.maxParent.global.body.position.z - this.global.body.position.z;
+        var Ixx = mass * (dy * dy + dz * dz);
+        var Iyy = mass * (dx * dx + dz * dz);
+        var Izz = mass * (dx * dx + dy * dy);
+        var Ixy = -mass * dx * dy;
+        var Ixz = -mass * dx * dz;
+        var Iyz = -mass * dy * dz;
+        this.global.body.momentOfInertia.elements[0] += Ixx;
+        this.global.body.momentOfInertia.elements[1] += Ixy;
+        this.global.body.momentOfInertia.elements[2] += Ixz;
+        this.global.body.momentOfInertia.elements[3] += Ixy;
+        this.global.body.momentOfInertia.elements[4] += Iyy;
+        this.global.body.momentOfInertia.elements[5] += Iyz;
+        this.global.body.momentOfInertia.elements[6] += Ixz;
+        this.global.body.momentOfInertia.elements[7] += Iyz;
+        this.global.body.momentOfInertia.elements[8] += Izz;
+        this.maxParent.global.body.momentOfInertia.addInPlace(this.global.body.momentOfInertia);
+        return this.global.body.momentOfInertia;
+    }
+
     calculateLocalHitbox() {
         this.local.hitbox.min = new Vector3(0, 0, 0);
         this.local.hitbox.max = new Vector3(0, 0, 0);
@@ -233,6 +270,13 @@ var Composite = class {
         }
     }
 
+    updateGlobalMomentOfInertiaAll() {
+        this.calculateGlobalMomentOfInertia();
+        for (var i = 0; i < this.children.length; i++) {
+            this.children[i].updateGlobalMomentOfInertiaAll();
+        }
+    }
+
     updateAllMeshes() {
         this.updateMesh();
         for (var i = 0; i < this.children.length; i++) {
@@ -258,6 +302,7 @@ var Composite = class {
             
         }
         this.updateGlobalHitboxAll();
+        this.updateGlobalMomentOfInertiaAll();
         this.update();
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].updateBeforeCollisionAll();

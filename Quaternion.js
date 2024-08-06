@@ -1,5 +1,5 @@
 var Vector3 = (typeof (Vector3) != "undefined") ? Vector3 : require("./Vector3");
-
+var Matrix3 = (typeof (Matrix3) != "undefined") ? Matrix3 : require("./Matrix3");
 
 var Quaternion = class {
     constructor(w = 1, x = 0, y = 0, z = 0) {
@@ -109,6 +109,33 @@ var Quaternion = class {
         this.y = 0;
         this.z = 0;
         return this;
+    }
+
+    toMatrix3() {
+        var matrix = new Matrix3();
+        var wx = this.w * this.x;
+        var wy = this.w * this.y;
+        var wz = this.w * this.z;
+        var xx = this.x * this.x;
+        var xy = this.x * this.y;
+        var xz = this.x * this.z;
+        var yy = this.y * this.y;
+        var yz = this.y * this.z;
+        var zz = this.z * this.z;
+
+        matrix.elements[0] = 1 - 2 * (yy + zz);
+        matrix.elements[1] = 2 * (xy - wz);
+        matrix.elements[2] = 2 * (xz + wy);
+
+        matrix.elements[3] = 2 * (xy + wz);
+        matrix.elements[4] = 1 - 2 * (xx + zz);
+        matrix.elements[5] = 2 * (yz - wx);
+
+        matrix.elements[6] = 2 * (xz - wy);
+        matrix.elements[7] = 2 * (yz + wx);
+        matrix.elements[8] = 1 - 2 * (xx + yy);
+
+        return matrix;
     }
 
     static from(w = 1, x = 0, y = 0, z = 0) {

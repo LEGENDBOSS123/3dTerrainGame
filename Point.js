@@ -11,6 +11,14 @@ var Point = class extends Composite {
         this.calculateGlobalHitbox();
     }
 
+    calculateLocalMomentOfInertia() {
+        this.local.body.momentOfInertia = Matrix3.zero();
+        return this.local.body.momentOfInertia;
+    }
+
+    rotateLocalMomentOfInertia(quaternion) {
+        return this.local.body.momentOfInertia;
+    }
 
     setMesh(options){
         var geometry = options?.geometry ?? new THREE.SphereGeometry(options?.radius ?? 1, 16, 16);

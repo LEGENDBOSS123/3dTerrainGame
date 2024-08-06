@@ -28,7 +28,7 @@ var mouse = new THREE.Vector2();
 
 var world = new World();
 world.setIterations(4);
-var player = new Point({ global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 1500, 0) } }, local: { body: { mass: 100 } } });
+var player = new Point({ global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 1500, 0) } }, local: { body: { mass: 10 } } });
 player.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
 
 player.addToScene(scene);
@@ -43,89 +43,27 @@ world.addComposite(player);
 // player.add(playerPart);
 // world.addComposite(playerPart);
 
-if(1 == 1){
-    var aaa = 50;
-    var playerPart = new Point();
-    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
-    playerPart.addToScene(scene);
-    playerPart.local.body.mass = 10;
-    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
-    player.add(playerPart);
 
-    world.addComposite(playerPart);
-    var playerPart = new Point();
-    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
-    playerPart.addToScene(scene);
-    playerPart.local.body.mass = 10;
-    playerPart.local.body.position.x += aaa;
-    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
-    player.add(playerPart);
-
-    world.addComposite(playerPart);
+var addToPlayer = function(pos, mass = 10){
 
     var playerPart = new Point();
     playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
     playerPart.addToScene(scene);
-    playerPart.local.body.mass = 10;
-    playerPart.local.body.position.z += aaa;
-    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
-    player.add(playerPart);
-    world.addComposite(playerPart);
-
-    var playerPart = new Point();
-    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
-    playerPart.addToScene(scene);
-    playerPart.local.body.mass = 10;
-    playerPart.local.body.position.x += aaa;
-    playerPart.local.body.position.z += aaa;
-    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
-    player.add(playerPart);
-    world.addComposite(playerPart);
-
-    var playerPart = new Point();
-    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
-    playerPart.addToScene(scene);
-    playerPart.local.body.mass = 10;
-    playerPart.local.body.position.x += aaa;
-    playerPart.local.body.position.z += aaa;
-    playerPart.local.body.position.y += aaa;
-    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
-    player.add(playerPart);
-    world.addComposite(playerPart);
-
-
-    var playerPart = new Point();
-    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
-    playerPart.addToScene(scene);
-    playerPart.local.body.mass = 10;
-    playerPart.local.body.position.z += aaa;
-    playerPart.local.body.position.y += aaa;
-    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
-    player.add(playerPart);
-    world.addComposite(playerPart);
-
-
-    var playerPart = new Point();
-    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
-    playerPart.addToScene(scene);
-    playerPart.local.body.mass = 10;
-    playerPart.local.body.position.x += aaa;
-    playerPart.local.body.position.y += aaa;
-    playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
-    player.add(playerPart);
-    world.addComposite(playerPart);
-
-
-
-    var playerPart = new Point();
-    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
-    playerPart.addToScene(scene);
-    playerPart.local.body.mass = 10;
-    playerPart.local.body.position.y += aaa;
+    playerPart.local.body.mass = mass;
+    playerPart.local.body.position.x += pos.x;
+    playerPart.local.body.position.y += pos.y;
+    playerPart.local.body.position.z += pos.z;
     playerPart.local.body.setVelocity(new Vector3(0, 0, 0));
     player.add(playerPart);
     world.addComposite(playerPart);
 }
+
+for(var i = 0; i < 30; i++){
+    addToPlayer(new Vector3(Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50));
+
+}
+
+
 player.setLocalFlag(Composite.FLAGS.CENTER_OF_MASS, true);
 
 // var ball = new Point({global:{body:{acceleration: new Vector3(0, -0.2, 0), position:new Vector3(0,100,0)}}});
@@ -350,7 +288,7 @@ function render() {
         }
     }
     
-    var delta = cameraControls.getDelta(camera).scale(500);
+    var delta = cameraControls.getDelta(camera).scale(10 * player.global.body.mass * world.deltaTime);
     //player.global.body.position.addInPlace(delta.scale(world.deltaTime));
     player.applyForce(delta, player.global.body.position);
     var vel = player.global.body.getVelocity();
