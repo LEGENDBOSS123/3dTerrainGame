@@ -29,7 +29,7 @@ var PhysicsBody3 = class {
     }
 
     getVelocityAtPosition(position) {
-        return this.getVelocity().add(this.getAngularVelocity().cross(position.subtract(this.position)));
+        return this.getVelocity().addInPlace(this.getAngularVelocity().cross(position.subtract(this.position)));
     }
 
     getVelocity() {
@@ -41,7 +41,7 @@ var PhysicsBody3 = class {
     }
 
     setVelocity(velocity) {
-        this.previousPosition = this.position.copy();
+        this.previousPosition.set(this.position);
         this.previousPosition.subtractInPlace(velocity);
     }
 
@@ -60,20 +60,22 @@ var PhysicsBody3 = class {
     updatePosition(velocity = this.getVelocity(), world) {
         this.position.addInPlace(velocity);
         this.position.addInPlace(this.acceleration.scale(world.deltaTimeSquared * 0.5));
-        this.position.addInPlace(this.netForce.scale(this.inverseMass * 0.5));
+        this.position.addInPlace(this.netForce.scale(this.inverseMass));
     }
 
     updateRotation(world) {
         this.angularVelocity.addInPlace(this.angularAcceleration.scale(world.deltaTimeSquared));
         if(this.netTorque.magnitudeSquared() > 0) {
-            this.inverseMomentOfInertia = this.momentOfInertia.invert();
             var deltaAngularVelocity = this.inverseMomentOfInertia.multiplyVector3(this.netTorque);
-            this.angularVelocity.addInPlace(deltaAngularVelocity.scale(1));
+            this.angularVelocity.addInPlace(deltaAngularVelocity);
         }
 
         var angularVelocityQuaternion = new Quaternion(1, this.angularVelocity.x * 0.5, this.angularVelocity.y * 0.5, this.angularVelocity.z * 0.5);
-
         this.rotation = angularVelocityQuaternion.multiply(this.rotation).normalizeInPlace();
+        // var axis = this.angularVelocity.normalize();
+        // var angle = this.angularVelocity.magnitude() * 0.5;
+        // var angularVelocityQuaternion = new Quaternion(Math.cos(angle), axis.x * Math.sin(angle), axis.y * Math.sin(angle), axis.z * Math.sin(angle));
+        // this.rotation = angularVelocityQuaternion.multiply(this.rotation).normalizeInPlace();
     }
 
     update(world) {

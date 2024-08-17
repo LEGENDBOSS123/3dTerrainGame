@@ -6,8 +6,37 @@ var Matrix3 = class {
         this.elements = options?.elements ?? [1, 0, 0, 0, 1, 0, 0, 0, 1];
     }
 
+    scale(s) {
+        var result = new this.constructor();
+        result.elements = [
+            this.elements[0] * s,
+            this.elements[1] * s,
+            this.elements[2] * s,
+            this.elements[3] * s,
+            this.elements[4] * s,
+            this.elements[5] * s,
+            this.elements[6] * s,
+            this.elements[7] * s,
+            this.elements[8] * s,
+        ];
+        return result;
+    }
+
+    scaleInPlace(s) {
+        this.elements[0] *= s;
+        this.elements[1] *= s;
+        this.elements[2] *= s;
+        this.elements[3] *= s;
+        this.elements[4] *= s;
+        this.elements[5] *= s;
+        this.elements[6] *= s;
+        this.elements[7] *= s;
+        this.elements[8] *= s;
+        return this;
+    }
+
     add(m) {
-        var result = new Matrix3();
+        var result = new this.constructor();
         result.elements = [
             this.elements[0] + m.elements[0],
             this.elements[1] + m.elements[1],
@@ -37,15 +66,15 @@ var Matrix3 = class {
 
     multiplyVector3(v) {
         var result = new Vector3();
-        result.x = this.elements[0] * v.x + this.elements[3] * v.y + this.elements[6] * v.z;
-        result.y = this.elements[1] * v.x + this.elements[4] * v.y + this.elements[7] * v.z;
-        result.z = this.elements[2] * v.x + this.elements[5] * v.y + this.elements[8] * v.z;
+        result.x = this.elements[0] * v.x + this.elements[1] * v.y + this.elements[2] * v.z;
+        result.y = this.elements[3] * v.x + this.elements[4] * v.y + this.elements[5] * v.z;
+        result.z = this.elements[6] * v.x + this.elements[7] * v.y + this.elements[8] * v.z;
         return result;
     }
 
     multiply(m) {
         m = m.elements;
-        var result = new Matrix3();
+        var result = new this.constructor();
         result.elements = [
             this.elements[0] * m[0] + this.elements[3] * m[1] + this.elements[6] * m[2],
             this.elements[1] * m[0] + this.elements[4] * m[1] + this.elements[7] * m[2],
@@ -67,60 +96,60 @@ var Matrix3 = class {
     }
 
     invert() {
-        var result = new Matrix3();
         var determinant = this.elements[0] * (this.elements[4] * this.elements[8] - this.elements[5] * this.elements[7]) - this.elements[1] * (this.elements[3] * this.elements[8] - this.elements[5] * this.elements[6]) + this.elements[2] * (this.elements[3] * this.elements[7] - this.elements[4] * this.elements[6]);
-
-        if (determinant == 0) {
-            return result;
+        if (Math.abs(determinant) < 1e-10) {
+            return this.constructor.zero();
         }
-
-        result.elements = [
-            (this.elements[4] * this.elements[8] - this.elements[5] * this.elements[7]) / determinant,
-            (this.elements[2] * this.elements[7] - this.elements[1] * this.elements[8]) / determinant,
-            (this.elements[1] * this.elements[5] - this.elements[2] * this.elements[4]) / determinant,
-            (this.elements[5] * this.elements[6] - this.elements[3] * this.elements[8]) / determinant,
-            (this.elements[0] * this.elements[8] - this.elements[2] * this.elements[6]) / determinant,
-            (this.elements[2] * this.elements[3] - this.elements[0] * this.elements[5]) / determinant,
-            (this.elements[3] * this.elements[7] - this.elements[4] * this.elements[6]) / determinant,
-            (this.elements[1] * this.elements[6] - this.elements[0] * this.elements[7]) / determinant,
-            (this.elements[0] * this.elements[4] - this.elements[1] * this.elements[3]) / determinant
+        var inverseDeterminant = 1 / determinant;
+        var result = new this.constructor();
+        result.elements = [ 
+            (this.elements[4] * this.elements[8] - this.elements[5] * this.elements[7]) * inverseDeterminant,
+            (this.elements[2] * this.elements[7] - this.elements[1] * this.elements[8]) * inverseDeterminant,
+            (this.elements[1] * this.elements[5] - this.elements[2] * this.elements[4]) * inverseDeterminant,
+            (this.elements[5] * this.elements[6] - this.elements[3] * this.elements[8]) * inverseDeterminant,
+            (this.elements[0] * this.elements[8] - this.elements[2] * this.elements[6]) * inverseDeterminant,
+            (this.elements[2] * this.elements[3] - this.elements[0] * this.elements[5]) * inverseDeterminant,
+            (this.elements[3] * this.elements[7] - this.elements[4] * this.elements[6]) * inverseDeterminant,
+            (this.elements[1] * this.elements[6] - this.elements[0] * this.elements[7]) * inverseDeterminant,
+            (this.elements[0] * this.elements[4] - this.elements[1] * this.elements[3]) * inverseDeterminant
         ];
 
         return result;
     }
 
     invertInPlace() {
-        var determinant = this.elements[0] * (this.elements[4] * this.elements[8] - this.elements[5] * this.elements[7]) - this.elements[1] * (this.elements[3] * this.elements[8] - this.elements[5] * this.elements[6]) + this.elements[2] * (this.elements[3] * this.elements[7] - this.elements[4] * this.elements[6]);
-
-        if (determinant == 0) {
-            return this;
+        var det = this.elements[0] * (this.elements[4] * this.elements[8] - this.elements[5] * this.elements[7]) -
+                  this.elements[1] * (this.elements[3] * this.elements[8] - this.elements[5] * this.elements[6]) +
+                  this.elements[2] * (this.elements[3] * this.elements[7] - this.elements[4] * this.elements[6]);
+    
+        if (Math.abs(det) < 1e-10) {
+            return this.constructor.zero();
         }
-
-        var temp = this.elements[1];
-        this.elements[1] = this.elements[3];
-        this.elements[3] = temp;
-        temp = this.elements[2];
-        this.elements[2] = this.elements[6];
-        this.elements[6] = temp;
-        temp = this.elements[5];
-        this.elements[5] = this.elements[7];
-        this.elements[7] = temp;
-
-        this.elements[0] = (this.elements[4] * this.elements[8] - this.elements[5] * this.elements[7]) / determinant;
-        this.elements[1] = (this.elements[2] * this.elements[7] - this.elements[1] * this.elements[8]) / determinant;
-        this.elements[2] = (this.elements[1] * this.elements[5] - this.elements[2] * this.elements[4]) / determinant;
-        this.elements[3] = (this.elements[5] * this.elements[6] - this.elements[3] * this.elements[8]) / determinant;
-        this.elements[4] = (this.elements[0] * this.elements[8] - this.elements[2] * this.elements[6]) / determinant;
-        this.elements[5] = (this.elements[2] * this.elements[3] - this.elements[0] * this.elements[5]) / determinant;
-        this.elements[6] = (this.elements[3] * this.elements[7] - this.elements[4] * this.elements[6]) / determinant;
-        this.elements[7] = (this.elements[1] * this.elements[6] - this.elements[0] * this.elements[7]) / determinant;
-        this.elements[8] = (this.elements[0] * this.elements[4] - this.elements[1] * this.elements[3]) / determinant;
-
+    
+        var invDet = 1 / det;
+    
+        var a00 = this.elements[0], a01 = this.elements[1], a02 = this.elements[2];
+        var a10 = this.elements[3], a11 = this.elements[4], a12 = this.elements[5];
+        var a20 = this.elements[6], a21 = this.elements[7], a22 = this.elements[8];
+    
+        this.elements[0] = (a11 * a22 - a12 * a21) * invDet;
+        this.elements[1] = (a02 * a21 - a01 * a22) * invDet;
+        this.elements[2] = (a01 * a12 - a02 * a11) * invDet;
+    
+        this.elements[3] = (a12 * a20 - a10 * a22) * invDet;
+        this.elements[4] = (a00 * a22 - a02 * a20) * invDet;
+        this.elements[5] = (a02 * a10 - a00 * a12) * invDet;
+    
+        this.elements[6] = (a10 * a21 - a11 * a20) * invDet;
+        this.elements[7] = (a01 * a20 - a00 * a21) * invDet;
+        this.elements[8] = (a00 * a11 - a01 * a10) * invDet;
+    
         return this;
     }
+    
 
     transpose() {
-        var result = new Matrix3();
+        var result = new this.constructor();
         for (var i = 0; i < 3; i++) {
             for (var j = 0; j < 3; j++) {
                 result.set(i, j, this.get(j, i));
@@ -164,6 +193,7 @@ var Matrix3 = class {
 
     setMatrix3(m) {
         this.elements = [...m.elements];
+        return this;
     }
 
     copy() {
@@ -175,11 +205,11 @@ var Matrix3 = class {
     }
 
     static identity() {
-        return new Matrix3({ elements: [1, 0, 0, 0, 1, 0, 0, 0, 1] });
+        return new this({ elements: [1, 0, 0, 0, 1, 0, 0, 0, 1] });
     }
 
     static zero(){
-        return new Matrix3({ elements: [0, 0, 0, 0, 0, 0, 0, 0, 0] });
+        return new this({ elements: [0, 0, 0, 0, 0, 0, 0, 0, 0] });
     }
 
     static from(elements) {

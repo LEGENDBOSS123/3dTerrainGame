@@ -35,6 +35,15 @@ var Terrain3 = class extends Composite {
         this.calculateGlobalHitbox();
     }
 
+    calculateLocalMomentOfInertia() {
+        this.local.body.momentOfInertia = Matrix3.zero();
+        return this.local.body.momentOfInertia;
+    }
+
+    rotateLocalMomentOfInertia(quaternion) {
+        return this.local.body.momentOfInertia;
+    }
+
     balance() {
         var averageHeight = 0;
         for (var i = 0; i < this.heightmaps.top.map.length; i++) {

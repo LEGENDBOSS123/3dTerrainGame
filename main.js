@@ -1,6 +1,6 @@
 
 
-noise.seed(Math.random());
+noise.seed(12315);
 
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -27,21 +27,20 @@ var mouse = new THREE.Vector2();
 
 
 var world = new World();
-world.setIterations(4);
-var player = new Point({ global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 1500, 0) } }, local: { body: { mass: 50 } } });
+world.setIterations(2);
+var player = new Composite({ global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 1500, 0) } }, local: { body: { mass: 0.000001 } } });
 player.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
 
 player.addToScene(scene);
 world.addComposite(player);
 
 
-
 var addToPlayer = function(pos, mass = 10){
 
     var playerPart = new Point();
-    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
+    playerPart.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: Math.floor(Math.random()**4 * 0xffffff), wireframe: false }) });
     playerPart.addToScene(scene);
-    playerPart.local.body.mass = mass;
+    playerPart.local.body.setMass(mass);
     playerPart.local.body.position.x += pos.x;
     playerPart.local.body.position.y += pos.y;
     playerPart.local.body.position.z += pos.z;
@@ -49,20 +48,25 @@ var addToPlayer = function(pos, mass = 10){
     player.add(playerPart);
     world.addComposite(playerPart);
 }
-
-for(var i = 0; i < 8; i++){
-    for(var j = 0; j < 8; j++){
-        var v = new Vector3(i * 20, 0, j * 20);
-        addToPlayer(v.add(new Vector3(0, -1400, 0)));
+var dd = new Vector3(8,8,8);
+for(var i = 0; i < dd.x; i++){
+    for(var j = 0; j < dd.y; j++){
+        for(var k = 0; k < dd.z; k++){
+            if(!(i == 0 || j == 0 || k == 0 || i == 7 || j == 7 || k == 7)){
+                continue;
+            }
+            var ezclaps = 7.5;
+            var v = new Vector3(j * ezclaps, k * ezclaps, i * ezclaps);
+            addToPlayer(v.add(new Vector3(0, 0, 0)), 10);
+        }
     }
 }
 
 //var v = new Vector3(Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50);
 //addToPlayer(v.add(new Vector3(0, -1200, 0)), 3);
 
-
 player.setLocalFlag(Composite.FLAGS.CENTER_OF_MASS, true);
-
+player.global.body.angularVelocity = new Vector3(0, 0, 0);
 // var ball = new Point({global:{body:{acceleration: new Vector3(0, -0.2, 0), position:new Vector3(0,100,0)}}});
 // ball.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
 // ball.local.body.mass = 1;
@@ -120,8 +124,8 @@ var generate2dHeightmap = function (xDim, zDim) {
     for (var x = 0; x < xDim; x++) {
         var row = [];
         for (var z = 0; z < zDim; z++) {
-            row.push(noise.perlin2(x / 10, z / 10) * 120 + noise.perlin2(x / 10, z / 10) * Math.sin(x/10) * 75 
-            + (noise.perlin2(x / 10, z / 10)+1) * Math.sin((noise.simplex2(x + z, z - x))/100)**4 * 340);
+            row.push((noise.perlin2(x / 10, z / 10) * 120 + noise.perlin2(x / 10, z / 10) * Math.sin(x/10) * 75 
+            + (noise.perlin2(x / 10, z / 10)+1) * Math.sin((noise.simplex2(x + z, z - x))/100)**4 * 340));
         }
         map.push(row);
     }
@@ -150,7 +154,7 @@ scene.add(light);
 
 var terrain1 = Terrain3.from2dArrays(topArray, topArray);
 var extension = Math.random() < 0.5 ? ".png" : ".jpg";
-extension = ".png";
+extension = ".jpg";
 var dim = extension == ".jpg" ? 512 : 1536;
 var topArray = generate2dHeightmap(dim, dim);
 
@@ -168,7 +172,7 @@ var img = new Image();
 img.src = "h" + extension;
 
 img.onload = function () {
-    var arr = Terrain3.getArrayFromImage(img, dim == 512 ? 12 : 160);
+    var arr = Terrain3.getArrayFromImage(img, dim == 512 ? 32 : 160);
     var terr = Terrain3.from2dArrays(arr, arr);
     terrain1.setMaps(terr.heightmaps.top.map, terr.heightmaps.bottom.map);
     terrain1.balance();
@@ -195,7 +199,7 @@ terrain1.setMesh(terrain1Material);
     terrain1.mesh.castShadow = true;
 terrain1.local.body.setPosition(new Vector3(-290, 0, 0));
 var terrain2 = Terrain3.from2dArrays(topArray2, topArray2);
-terrain2.setTerrainScale(30);
+terrain2.setTerrainScale(0);
 var terrain2Material = new THREE.MeshPhongMaterial({ color: 0x00FFFF });
 terrain2Material.wireframe = false;
 terrain2.setMesh(terrain2Material);
@@ -236,7 +240,7 @@ window.addEventListener('mousemove', function (e) {
 
 
 
-
+top.grounded = false;
 function render() {
     stats.begin();
     /*raycaster.setFromCamera(mouse, camera);
@@ -273,20 +277,20 @@ function render() {
     if (keyListener.isHeld("KeyI")) {
         cameraControls.zoomIn();
     }
+    grounded = false;
     world.step()
-    var grounded = false;
-
+    
     if (!grounded) {
         cameraControls.movement.up = false;
     }
     else {
         if(cameraControls.movement.up){
             var vel = player.global.body.getVelocity();
-            player.global.body.setVelocity(new Vector3(vel.x, vel.y + 10, vel.z));
+            player.global.body.setVelocity(new Vector3(vel.x / world.deltaTime, vel.y/world.deltaTime + 10, vel.z / world.deltaTime).scale(world.deltaTime));
         }
     }
     
-    var delta = cameraControls.getDelta(camera).scale(5 * player.global.body.mass * world.deltaTime);
+    var delta = cameraControls.getDelta(camera).scale(2 * player.global.body.mass * world.deltaTime);
     player.applyForce(delta, player.global.body.position);
     var vel = player.global.body.getVelocity();
     var ogvel = vel.copy();

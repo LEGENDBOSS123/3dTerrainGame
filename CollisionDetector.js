@@ -11,8 +11,9 @@ var Contact = (typeof (Contact) != "undefined") ? Contact : require("./Contact")
 var CollisionDetector = class {
 
     static seperatorCharacter = ":";
-    static penetrationCoefficient = 1;
-    static penetrationMax = 4;
+    static penetrationCoefficient = 0.1;
+    static penetrationMax = 1;
+    static penetrationDamping = 0.5;
 
     constructor(options) {
         this.pairs = options?.pairs ?? new Map();
@@ -92,65 +93,107 @@ var CollisionDetector = class {
     }
 
     resolveAllContacts() {
-        var map = new Map();
-
+        var maxParentMap = new Map();
+        var allMap = new Map();
         for (var i = 0; i < this.contacts.length; i++) {
             var contact = this.contacts[i];
-            if (!map.has(contact.body1.maxParent.id)) {
-                map.set(contact.body1.maxParent.id, []);
+            if (!maxParentMap.has(contact.body1.maxParent.id)) {
+                maxParentMap.set(contact.body1.maxParent.id, []);
             }
 
-            if (!map.has(contact.body2.maxParent.id)) {
-                map.set(contact.body2.maxParent.id, []);
+            if (!maxParentMap.has(contact.body2.maxParent.id)) {
+                maxParentMap.set(contact.body2.maxParent.id, []);
             }
 
-            map.get(contact.body1.maxParent.id).push(contact);
-            map.get(contact.body2.maxParent.id).push(contact);
+            if (!allMap.has(contact.body1.id)) {
+                allMap.set(contact.body1.id, { penetrationSum: 0, contacts: [] });
+            }
+
+            if (!allMap.has(contact.body2.id)) {
+                allMap.set(contact.body2.id, { penetrationSum: 0, contacts: [] });
+            }
+
+            // var body1Contact = allMap.get(contact.body1.id);
+            // if(body1Contact.contacts.length == 0){
+            //     body1Contact.contacts.push(contact);
+            //     maxParentMap.get(contact.body1.maxParent.id).push(contact);
+            // }
+            // else{
+            //     if(body1Contact.contacts[0].penetration < contact.penetration){
+            //         allMap.set(contact.body1.id, contact);
+            //         maxParentMap.get(contact.body1.maxParent.id).push(contact);
+            //     }
+            // }
+
+            // var body2Contact = allMap.get(contact.body2.id);
+            // if(body2Contact == null){
+            //     allMap.set(contact.body2.id, contact);
+            //     maxParentMap.get(contact.body2.maxParent.id).push(contact);
+            // }
+            // else{
+            //     if(body2Contact.penetration < contact.penetration){
+            //         allMap.set(contact.body2.id, contact);
+            //         maxParentMap.get(contact.body2.maxParent.id).push(contact);
+            //     }
+            // }
+
+
+            maxParentMap.get(contact.body1.maxParent.id).push(contact);
+            maxParentMap.get(contact.body2.maxParent.id).push(contact);
+            allMap.get(contact.body1.id).contacts.push(contact);
+            allMap.get(contact.body1.id).penetrationSum += contact.penetration;
+            allMap.get(contact.body2.id).contacts.push(contact);
+            allMap.get(contact.body2.id).penetrationSum += contact.penetration;
         }
 
-        for (var [key, value] of map) {
+
+        for (var [key, value] of maxParentMap) {
 
             var inverseLength = 1 / value.length;
-            
             for (var i = 0; i < value.length; i++) {
                 var contact = value[i];
 
-                /*var velocityBefore = contact.velocity.projectOnto(contact.normal);
-                var velocityAfter = contact.velocity.projectOntoPlane(contact.normal);
-                var impulse = velocityAfter.subtract(contact.velocity).scaleInPlace(contact.body1.global.body.mass);
-                contact.body1.applyForce(impulse.scale(inverseLength), contact.point);*/
-
+                contact.normal.normalizeInPlace();
                 var impactSpeed = contact.velocity.dot(contact.normal);
-                var normalForce = -1 * contact.body1.global.body.mass * impactSpeed + Math.min(this.constructor.penetrationCoefficient * contact.penetration, this.constructor.penetrationMax) * contact.body1.global.body.mass;
-
-                var tangential = contact.velocity.projectOntoPlane(contact.normal);
-                var maxFriction = tangential.magnitude() * contact.body1.global.body.mass;
-                tangential.normalizeInPlace();
-
-                var friction = normalForce * 0;
-
-                if(normalForce < 0){
-                    normalForce = 0;
-                    tangential = new Vector3(0,0,0);
-                }
-
                 var force = new Vector3();
-                force.addInPlace(contact.normal.scale(normalForce));
-                force.addInPlace(tangential.scale(-1 * Math.min(maxFriction, friction)));
-                
-                contact.body1.maxParent.applyForce(force.scale(inverseLength), contact.point);
-            }
-            for(var i = 0; i < value.length; i++){
-                var contact = value[i];
-                
-                contact.body1.translate(contact.normal.scale(contact.penetration * inverseLength));
-            }
+
+                var restitution = 0;
+                var radius1 = contact.point.subtract(contact.body1.maxParent.global.body.position);
+                var radius2 = contact.point.subtract(contact.body2.maxParent.global.body.position);
+
+                var rotationalEffects1 = contact.normal.dot(contact.body1.maxParent.global.body.inverseMomentOfInertia.multiplyVector3(radius1.cross(contact.normal)).cross(radius1));
+                var rotationalEffects2 = contact.normal.dot(contact.body2.maxParent.global.body.inverseMomentOfInertia.multiplyVector3(radius2.cross(contact.normal)).cross(radius2));
+                var denominator = contact.body1.maxParent.global.body.inverseMass + rotationalEffects1;
+                var impulse = - (1 + restitution) * impactSpeed / denominator;
+                if (impulse < 0) {
+                    impulse = 0;
+                }
             
+                var penetrationForce = (Math.min(this.constructor.penetrationCoefficient * contact.penetration + this.constructor.penetrationDamping * impactSpeed, this.constructor.penetrationMax)) * contact.body1.local.body.mass;
+                impulse += penetrationForce > 0 ? penetrationForce : 0;
+                
+                
+                var tangential = contact.velocity.projectOntoPlane(contact.normal);
+                var maxFriction = tangential.magnitude() / denominator * 0.5;
+                tangential.normalizeInPlace();
+                var friction = impulse * 0.25;
+                force.addInPlace(tangential.scale(-1 * Math.max(0, Math.min(maxFriction, friction))));
+                force.addInPlace(contact.normal.scale(impulse));
+                contact.body1.applyForce(force.scale(0.5 * inverseLength * contact.penetration / allMap.get(contact.body1.id).penetrationSum), contact.point);
+                top.grounded = true;
+            }
+            for (var i = 0; i < value.length; i++) {
+                var contact = value[i];
+                contact.body1.translate(contact.normal.scale(contact.penetration * inverseLength * contact.penetration / allMap.get(contact.body1.id).penetrationSum));
+            }
         }
         this.contacts.length = 0;
     }
 
     handleSphereSphere(sphere1, sphere2) {
+        if (sphere1.maxParent == sphere2.maxParent) {
+            return false;
+        }
         if (sphere1.body.position.distanceTo(sphere2.body.position) > sphere1.body.radius + sphere2.body.radius) {
             return false;
         }
@@ -167,9 +210,8 @@ var CollisionDetector = class {
 
     handleTerrainPoint(terrain1, point1) {
         var pointPos = point1.global.body.position;
-        
+
         var pointPosPrev = point1.global.body.actualPreviousPosition;
-        //console.log(pointPosPrev+"");
         var translatedPointPos = terrain1.translateWorldToLocal(pointPos);
         var heightmapPos = terrain1.translateLocalToHeightmap(translatedPointPos);
         var translatedPointPosPrev = terrain1.translateWorldToLocal(pointPosPrev);
@@ -177,7 +219,7 @@ var CollisionDetector = class {
 
         if (heightmapPos.x <= 0 || heightmapPos.x >= terrain1.heightmaps.widthSegments || heightmapPos.z <= 0 || heightmapPos.z >= terrain1.heightmaps.depthSegments) {
             return false;
-        }        
+        }
 
         var triangleTop = terrain1.getTriangle(terrain1.heightmaps.top, heightmapPos);
         var triangleBottom = terrain1.getTriangle(terrain1.heightmaps.bottom, heightmapPos);
@@ -187,11 +229,11 @@ var CollisionDetector = class {
 
         var height = 0;
         var top = true;
-        var normal = new Vector3(0,0,0);
+        var normal = new Vector3(0, 0, 0);
         var height1 = triangle.getHeight(heightmapPosPrev);
         var height2 = triangle.getHeight(heightmapPosPrev);
         // if(1==0 && heightmapPos.y > height1.y && heightmapPosPrev.y > height2.y){
-            
+
         //     top = true;
         // }
         // else if(1==0 && heightmapPos.y < height1.y && heightmapPosPrev.y < height2.y){
@@ -211,7 +253,7 @@ var CollisionDetector = class {
         //     }
         // }
 
-        if(top){
+        if (top) {
             var height = terrain1.translateHeightmapToWorld(triangleTop.getHeight(heightmapPos));
             var triangle2 = triangle.copy();
             triangle2.a = terrain1.translateHeightmapToWorld(triangle2.a);
@@ -223,7 +265,7 @@ var CollisionDetector = class {
             contact.normal = normal;
             //contact.penetration = (new Vector3(0, height.y - pointPos.y, 0)).dot(contact.normal);
             contact.penetration = triangle2.a.subtract(pointPos).dot(contact.normal);
-            if(contact.penetration < 0){
+            if (contact.penetration < 0) {
                 return false;
             }
             contact.body1 = point1;
@@ -232,9 +274,9 @@ var CollisionDetector = class {
             contact.velocity = point1.getVelocityAtPosition(contact.point).subtractInPlace(terrain1.getVelocityAtPosition(contact.point));
             return contact;
         }
-        else{
+        else {
             var height = terrain1.translateHeightmapToWorld(triangleBottom.getHeight(heightmapPos));
-            if(pointPos.y > height.y){
+            if (pointPos.y > height.y) {
                 point1.translate(new Vector3(0, height.y - pointPos.y, 0));
             }
         }
