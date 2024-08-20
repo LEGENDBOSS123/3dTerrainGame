@@ -60,7 +60,7 @@ var CameraTHREEJS = class {
         var normalizedLookAt = this.getLookAt().normalize();
 
         this.camera.lookAt(camera.position.clone().add(normalizedLookAt));
-        this.origin.set(this.origin.lerp(entity.position, 0.5));
+        this.origin.set(this.origin.lerp(entity.position, 1));
         this.camera.position.set(...this.origin);
         this.camera.position.add(normalizedLookAt.scale(-this.pullback));
     }

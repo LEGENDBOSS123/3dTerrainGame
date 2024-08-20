@@ -15,6 +15,19 @@ var Contact = class {
 
         this.impulse = Vector3.from(options?.impulse);
     }
+
+    copy(){
+        var c = new Contact();
+        c.normal = this.normal.copy();
+        c.penetration = this.penetration;
+
+        c.body1 = this.body1;
+        c.body2 = this.body2;
+        c.point = this.point.copy();
+        c.velocity = this.velocity.copy();
+        c.impulse = this.impulse.copy();
+        return c;
+    }
 };
 
 

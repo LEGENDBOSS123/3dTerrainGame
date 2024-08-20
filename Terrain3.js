@@ -143,7 +143,7 @@ var Terrain3 = class extends Composite {
         canvas.height = img.height;
         var ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0);
-        var data = ctx.getImageData(0, 0, img.width, img.height).data;
+        top.data = ctx.getImageData(0, 0, img.width, img.height).data;
         var heightmaps = [];
         for (var i = 0; i < data.length; i += 4) {
             var sum = 0;

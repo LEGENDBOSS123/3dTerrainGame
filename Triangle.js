@@ -10,17 +10,17 @@ var Triangle = class {
     getNormal() {
         var v1 = this.b.subtract(this.a);
         var v2 = this.c.subtract(this.a);
-        return v1.cross(v2).normalize();
+        return v1.cross(v2).normalizeInPlace();
     }
 
     getCentroid() {
-        return this.a.add(this.b).add(this.c).divideScalar(3);
+        return this.a.add(this.b).add(this.c).scaleInPlace(1 / 3);
     }
 
     getArea() {
         var v1 = this.b.subtract(this.a);
         var v2 = this.c.subtract(this.a);
-        return v1.cross(v2).length() / 2;
+        return v1.cross(v2).magnitude() / 2;
     }
 
     containsPoint(v) {
@@ -41,7 +41,7 @@ var Triangle = class {
         return (u >= 0) && (v >= 0) && (u + v < 1);
     }
 
-    getHeight(v){
+    getHeight(v) {
         var areaABC = Math.abs((this.a.x * (this.b.z - this.c.z) + this.b.x * (this.c.z - this.a.z) + this.c.x * (this.a.z - this.b.z)) / 2.0);
         var areaPBC = Math.abs((v.x * (this.b.z - this.c.z) + this.b.x * (this.c.z - v.z) + this.c.x * (v.z - this.b.z)) / 2.0);
         var areaPCA = Math.abs((this.a.x * (v.z - this.c.z) + v.x * (this.c.z - this.a.z) + this.c.x * (this.a.z - v.z)) / 2.0);
@@ -50,13 +50,74 @@ var Triangle = class {
         return new Vector3(v.x, (areaPBC * this.a.y + areaPCA * this.b.y + areaPAB * this.c.y) / areaABC, v.z);
     }
 
-    copy(){
+    getClosestPoint(point) {
+        const ab = this.b.subtract(this.a);
+        const ac = this.c.subtract(this.a);
+        const ap = point.subtract(this.a);
+
+        const d1 = ab.dot(ap);
+        const d2 = ac.dot(ap);
+
+        if (d1 <= 0 && d2 <= 0) return this.a; // Closest to vertex a
+
+        const bp = point.subtract(this.b);
+        const d3 = ab.dot(bp);
+        const d4 = ac.dot(bp);
+
+        if (d3 >= 0 && d4 <= d3) return this.b; // Closest to vertex b
+
+        const cp = point.subtract(this.c);
+        const d5 = ab.dot(cp);
+        const d6 = ac.dot(cp);
+
+        if (d6 >= 0 && d5 <= d6) return this.c; // Closest to vertex c
+
+        const vc = d1 * d4 - d3 * d2;
+        if (vc <= 0 && d1 >= 0 && d3 <= 0) {
+            const v = d1 / (d1 - d3);
+            return this.a.add(ab.scale(v)); // Closest to edge ab
+        }
+
+        const vb = d5 * d2 - d1 * d6;
+        if (vb <= 0 && d2 >= 0 && d6 <= 0) {
+            const w = d2 / (d2 - d6);
+            return this.a.add(ac.scale(w)); // Closest to edge ac
+        }
+
+        const va = d3 * d6 - d5 * d4;
+        if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) {
+            const u = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+            return this.b.add(this.c.subtract(this.b).scale(u)); // Closest to edge bc
+        }
+
+        const denom = 1 / (va + vb + vc);
+        const v = vb * denom;
+        const w = vc * denom;
+        return this.a.add(ab.scale(v)).add(ac.scale(w)); // Inside the triangle
+    }
+
+    intersectsSphere = function (position, radius) {
+        var normal = this.getNormal();
+        var distance = normal.dot(position.subtract(this.a));
+        var planePoint = position.add(normal.scale(distance));
+        return planePoint;
+        var closestPoint = this.getClosestPoint(position);
+        var distance = closestPoint.subtract(position).magnitudeSquared();
+        if (distance > radius * radius) {
+            return null;
+        }
+
+        return closestPoint;
+    };
+
+
+    copy() {
         return new Triangle(this.a, this.b, this.c);
     }
 
     static from(a, b, c) {
         return new Triangle(a?.a ?? a[0] ?? a ?? 0,
-                            b?.b ?? b[1] ?? b ?? 0,
-                            c?.c ?? c[2] ?? c ?? 0);
+            b?.b ?? b[1] ?? b ?? 0,
+            c?.c ?? c[2] ?? c ?? 0);
     }
 }

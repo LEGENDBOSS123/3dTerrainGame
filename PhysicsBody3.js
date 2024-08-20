@@ -29,7 +29,7 @@ var PhysicsBody3 = class {
     }
 
     getVelocityAtPosition(position) {
-        return this.getVelocity().addInPlace(this.getAngularVelocity().cross(position.subtract(this.position)));
+        return this.getVelocity().addInPlace(this.getAngularVelocity().cross(position.subtract(this.position).scale(1)));
     }
 
     getVelocity() {

@@ -27,13 +27,9 @@ var Sphere = class extends Composite {
     calculateLocalMomentOfInertia() {
         this.local.body.momentOfInertia = Matrix3.zero();
         var I = (2/5) * this.local.body.mass * this.radius * this.radius;
-        this.local.body.momentOfInertia.set(I, 0, 0);
-        this.local.body.momentOfInertia.set(I, 1, 1);
-        this.local.body.momentOfInertia.set(I, 2, 2);
-        return this.local.body.momentOfInertia;
-    }
-
-    rotateLocalMomentOfInertia(quaternion) {
+        this.local.body.momentOfInertia.set(0, 0, I);
+        this.local.body.momentOfInertia.set(1, 1, I);
+        this.local.body.momentOfInertia.set(2, 2, I);
         return this.local.body.momentOfInertia;
     }
 

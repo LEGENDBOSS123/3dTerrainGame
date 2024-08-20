@@ -79,7 +79,6 @@ var Composite = class {
         this.global.body.momentOfInertia.elements[6] += Ixz;
         this.global.body.momentOfInertia.elements[7] += Iyz;
         this.global.body.momentOfInertia.elements[8] += Izz;
-        
         return this.global.body.momentOfInertia;
     }
 
@@ -173,6 +172,9 @@ var Composite = class {
     }
 
     applyForce(force, position) {
+        if (this.shape == Composite.SHAPES.TERRAIN3) {
+            return
+        }
         if (this.isMaxParent()) {
             this.global.body.netForce.addInPlace(force);
             this.global.body.netTorque.addInPlace((position.subtract(this.global.body.position)).cross(force));
@@ -205,15 +207,15 @@ var Composite = class {
         this.local.body.angularVelocity = angularVelocity.copy();
     }
 
-    getCenterOfMass() {
+    getCenterOfMass(skip = false) {
         if (!this.children.length) {
             return this.global.body.position.copy();
         }
-        var centerOfMass = this.global.body.position.scale(this.local.body.mass);
+        var centerOfMass = skip ? new Vector3() : this.global.body.position.scale(this.local.body.mass);
         for (var i = 0; i < this.children.length; i++) {
             centerOfMass.addInPlace(this.children[i].getCenterOfMass().scale(this.children[i].global.body.mass));
         }
-        centerOfMass.scaleInPlace(this.global.body.inverseMass);
+        centerOfMass.scaleInPlace(1/(this.global.body.mass - (skip ? this.local.body.mass : 0)));
         return centerOfMass;
     }
 
@@ -254,7 +256,7 @@ var Composite = class {
         }
 
         if (this.getLocalFlag(this.constructor.FLAGS.CENTER_OF_MASS)) {
-            var centerOfMass = this.getCenterOfMass();
+            var centerOfMass = this.getCenterOfMass(true);
             var translationAmount = this.global.body.rotation.conjugate().multiplyVector3(this.global.body.position.subtract(centerOfMass));
             this.translateChildren(translationAmount);
         }
@@ -282,13 +284,13 @@ var Composite = class {
         if (this.isMaxParent()) {
             this.updateGlobalMomentOfInertiaAll();
         }
-        else{
+        else {
             this.maxParent.global.body.momentOfInertia.addInPlace(this.global.body.momentOfInertia);
         }
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].updateMaxParentMomentOfInertia();
         }
-        if(this.isMaxParent()) {
+        if (this.isMaxParent()) {
             this.maxParent.global.body.inverseMomentOfInertia = this.maxParent.global.body.momentOfInertia.invert();
         }
     }
@@ -314,23 +316,23 @@ var Composite = class {
 
     updateBeforeCollisionAll() {
         this.update();
-        
+
         if (this.isMaxParent()) {
             this.calculatePropertiesAll();
             this.syncAll();
         }
-        
+
         this.updateGlobalHitboxAll();
-        
-        if(this.isMaxParent()) {
+
+        if (this.isMaxParent()) {
             this.updateMaxParentMomentOfInertia();
         }
-       
-        
+
+
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].updateBeforeCollisionAll();
         }
-        
+
     }
 
     updateAfterCollisionAll() {
@@ -343,7 +345,12 @@ var Composite = class {
     updateMesh() {
         if (this.mesh) {
             this.mesh.position.copy(this.global.body.position);
-            this.mesh.quaternion.copy(this.global.body.rotation);
+            var quat = this.global.body.rotation.copy();
+            quat.x *= -1;
+            //quat.y *= -1;
+            quat.z *= -1;
+            //quat.w *= -1;
+            this.mesh.quaternion.copy(quat);
         }
     }
 
