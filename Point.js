@@ -12,7 +12,7 @@ var Point = class extends Composite {
     }
 
     calculateLocalMomentOfInertia() {
-        this.local.body.momentOfInertia = Matrix3.identity();
+        this.local.body.momentOfInertia = Matrix3.zero();
         return this.local.body.momentOfInertia;
     }
 

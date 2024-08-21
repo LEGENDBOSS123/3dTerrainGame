@@ -224,6 +224,30 @@ var Terrain3 = class extends Composite {
         return new Triangle(v2, v3, v4);
     }
 
+    getTrianglePair(map, v) {
+        if (v.z <= 0 || v.z >= this.heightmaps.depthSegments || v.x <= 0 || v.x >= this.heightmaps.widthSegments) {
+            return null;
+        }
+        var v1 = this.getNearestTile(v);
+        v1.y = this.getHeight(map, v1);
+
+        var v2 = v1.copy();
+        v2.x++;
+        v2.y = this.getHeight(map, v2);
+
+        var v3 = v1.copy();
+        v3.z++;
+        v3.y = this.getHeight(map, v3);
+
+
+        var v4 = v1.copy();
+        v4.x++;
+        v4.z++;
+        v4.y = this.getHeight(map, v4);
+
+        return [new Triangle(v2, v3, v4), new Triangle(v2, v1, v3)];
+    }
+
     getHeightFromHeightmap(map, v) {
         var translated_v = this.translateWorldToHeightmap(v);
 

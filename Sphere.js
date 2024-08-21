@@ -36,6 +36,7 @@ var Sphere = class extends Composite {
     setMesh(options){
         var geometry = options?.geometry ?? new THREE.SphereGeometry(this.radius, 16, 16);
         this.mesh = new THREE.Mesh(geometry, options?.material ?? new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: true }));
+        this.updateMesh();
     }
 };
 

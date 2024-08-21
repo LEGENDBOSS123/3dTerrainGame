@@ -96,18 +96,45 @@ var Triangle = class {
         return this.a.add(ab.scale(v)).add(ac.scale(w)); // Inside the triangle
     }
 
+    closestPointOnLineSegment(v1, v2, point){
+        var v12 = v2.subtract(v1);
+        var v13 = point.subtract(v1);
+
+        var t = v13.dot(v12) / v12.dot(v12);
+
+        if(t < 0){
+            return v1;
+        } else if(t > 1){
+            return v2;
+        } else {
+            return v1.add(v12.scale(t));
+        }
+    }
+
     intersectsSphere = function (position, radius) {
+        if(!this.containsPoint(position)){
+            var points = [this.closestPointOnLineSegment(this.a, this.b, position), this.closestPointOnLineSegment(this.b, this.c, position), this.closestPointOnLineSegment(this.c, this.a, position)];
+            var distances = [points[0].distanceSquared(position), points[1].distanceSquared(position), points[2].distanceSquared(position)];
+            var minIndex = -1;
+
+            for (var i = 0; i < distances.length; i++) {
+                if (distances[i] < distances[minIndex] && distances[i] < radius * radius) {
+                    minIndex = i;
+                }
+            }
+            if(minIndex == -1){
+                return null;
+            }
+            return points[minIndex];
+        }
         var normal = this.getNormal();
         var distance = normal.dot(position.subtract(this.a));
         var planePoint = position.add(normal.scale(distance));
-        return planePoint;
-        var closestPoint = this.getClosestPoint(position);
-        var distance = closestPoint.subtract(position).magnitudeSquared();
-        if (distance > radius * radius) {
+
+        if (planePoint.distanceSquared(position) > radius * radius) {
             return null;
         }
-
-        return closestPoint;
+        return planePoint;
     };
 
 

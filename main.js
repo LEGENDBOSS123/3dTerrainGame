@@ -33,7 +33,7 @@ world.setIterations(2);
 
 
 
-var player = new Composite({radius:5, global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 1500, 0) } }, local: { body: { mass: 1 } } });
+var player = new Composite({radius:5, global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 4000, 0) } }, local: { body: { mass: 0 } } });
 player.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
 
 
@@ -44,8 +44,8 @@ world.addComposite(player);
 var addToPlayer = function(pos, mass = 10){
 
     var playerPart = new Sphere();
-    playerPart.radius = 100;
-    playerPart.setMesh({material: new THREE.MeshPhongMaterial({ color: Math.floor(Math.random()**4 * 0xffffff), wireframe: false }) });
+    playerPart.radius = 30;
+    playerPart.setMesh({material: new THREE.MeshPhongMaterial({ color: Math.floor(Math.random()**4 * 0xffffff), wireframe: true }) });
     playerPart.addToScene(scene);
     playerPart.local.body.setMass(mass);
     playerPart.local.body.position.x += pos.x;
@@ -64,12 +64,12 @@ for(var i = 0; i < dd.x; i++){
             }
             var ezclaps = 45;
             var v = new Vector3(j * ezclaps, k * ezclaps, i * ezclaps);
-            addToPlayer(v.add(new Vector3(0, 0, 0)), 100);
+            addToPlayer(v.add(new Vector3(0, 0, 0)), 0.2);
         }
     }
 }
-for(var i = 0 ; i < 10; i++){
-    var sphere = new Sphere({radius: 80, local: {body:{mass: 1}},global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(200, 1500, Math.random() * 500) } }});
+for(var i = 0 ; i < 0; i++){
+    var sphere = new Sphere({radius: 80, local: {body:{mass: 1}},global: { body: { acceleration: new Vector3(0, -5, 0), position: new Vector3(200, 4000, Math.random() * 500) } }});
     sphere.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
     sphere.addToScene(scene);
     world.addComposite(sphere);
@@ -77,11 +77,11 @@ for(var i = 0 ; i < 10; i++){
 
 
 setInterval(function(){
-    var sphere = new Sphere({radius: Math.random() * 40 + 40, local: {body:{mass: 1}},global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(200 + Math.random() * 100, 1500, Math.random() * 500) } }});
+    var sphere = new Sphere({radius: Math.random() * 40 + 40, local: {body:{mass: 1}},global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(200 + Math.random() * 100, 4500, Math.random() * 500) } }});
     sphere.setMesh({material: new THREE.MeshPhongMaterial({ color: Math.floor(Math.random() * 0xffffff), wireframe: false }) });
     sphere.addToScene(scene);
     world.addComposite(sphere);
-}, 200);
+}, 1000);
 
 //var v = new Vector3(Math.random() * 100 - 50, Math.random() * 100 - 50, Math.random() * 100 - 50);
 //addToPlayer(v.add(new Vector3(0, -1200, 0)), 3);
@@ -266,6 +266,9 @@ window.addEventListener('mousemove', function (e) {
 
 top.grounded = false;
 top.groundedIter = 0;
+var start = performance.now();
+var fps = 120;
+var steps = 0;
 function render() {
     stats.begin();
     /*raycaster.setFromCamera(mouse, camera);
@@ -303,8 +306,16 @@ function render() {
         cameraControls.zoomIn();
     }
     grounded = false;
-    if(!top.frfr){
-    world.step()}
+    var now = performance.now();
+    var delta = (now - start) / 1000;
+    var steps2 = delta * fps;
+    for (var i = 0; i < steps2 - steps; i++) {
+        world.step();
+        steps++;
+    }
+    //var lerpAmount = steps - steps2;
+    //console.log(lerpAmount);
+
     groundedIter--;
     if (!grounded || groundedIter > 0) {
         cameraControls.movement.up = false;
@@ -314,7 +325,7 @@ function render() {
             var vel = player.global.body.getVelocity();
             player.global.body.setVelocity(new Vector3(vel.x / world.deltaTime, vel.y/world.deltaTime + 20, vel.z / world.deltaTime).scale(world.deltaTime));
         }
-        groundedIter = 10;
+        groundedIter = 1;
     }
     
     var delta = cameraControls.getDelta(camera).scale(6 * player.global.body.mass * world.deltaTime);
@@ -337,4 +348,8 @@ function render() {
     requestAnimationFrame(render);
 }
 
-render();
+setTimeout(function () {
+    render();
+    top.start = performance.now();
+
+}, 0);
