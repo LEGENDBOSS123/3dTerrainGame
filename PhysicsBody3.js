@@ -17,6 +17,7 @@ var PhysicsBody3 = class {
         this.netForce = Vector3.from(options?.netForce);
 
         this.rotation = Quaternion.from(options?.rotation);
+        this.previousRotation = Quaternion.from(options?.previousRotation ?? this.rotation);
         this.angularVelocity = Vector3.from(options?.angularVelocity);
         this.angularAcceleration = Vector3.from(options?.angularAcceleration);
         this.netTorque = Vector3.from(options?.netTorque);
@@ -29,7 +30,7 @@ var PhysicsBody3 = class {
     }
 
     getVelocityAtPosition(position) {
-        return this.getVelocity().addInPlace(this.getAngularVelocity().cross(position.subtract(this.position).scale(1)));
+        return this.getVelocity().addInPlace(this.getAngularVelocity().cross(position.subtract(this.position)));
     }
 
     getVelocity() {
@@ -71,11 +72,8 @@ var PhysicsBody3 = class {
         }
 
         var angularVelocityQuaternion = new Quaternion(1, this.angularVelocity.x * 0.5, this.angularVelocity.y * 0.5, this.angularVelocity.z * 0.5);
+        this.previousRotation = this.rotation.copy();
         this.rotation = angularVelocityQuaternion.multiply(this.rotation).normalizeInPlace();
-        // var axis = this.angularVelocity.normalize();
-        // var angle = this.angularVelocity.magnitude() * 0.5;
-        // var angularVelocityQuaternion = new Quaternion(Math.cos(angle), axis.x * Math.sin(angle), axis.y * Math.sin(angle), axis.z * Math.sin(angle));
-        // this.rotation = angularVelocityQuaternion.multiply(this.rotation).normalizeInPlace();
     }
 
     update(world) {

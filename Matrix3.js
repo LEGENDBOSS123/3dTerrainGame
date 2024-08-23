@@ -66,9 +66,12 @@ var Matrix3 = class {
 
     multiplyVector3(v) {
         var result = new Vector3();
-        result.x = this.elements[0] * v.x + this.elements[1] * v.y + this.elements[2] * v.z;
-        result.y = this.elements[3] * v.x + this.elements[4] * v.y + this.elements[5] * v.z;
-        result.z = this.elements[6] * v.x + this.elements[7] * v.y + this.elements[8] * v.z;
+        // result.x = this.elements[0] * v.x + this.elements[1] * v.y + this.elements[2] * v.z;
+        // result.y = this.elements[3] * v.x + this.elements[4] * v.y + this.elements[5] * v.z;
+        // result.z = this.elements[6] * v.x + this.elements[7] * v.y + this.elements[8] * v.z;
+        result.x = this.elements[0] * v.x + this.elements[3] * v.y + this.elements[6] * v.z;
+        result.y = this.elements[1] * v.x + this.elements[4] * v.y + this.elements[7] * v.z;
+        result.z = this.elements[2] * v.x + this.elements[5] * v.y + this.elements[8] * v.z;
         return result;
     }
 
@@ -226,6 +229,13 @@ var Matrix3 = class {
             array.push(this.elements.slice(i * 3, i * 3 + 3));
         }
         return array;
+    }
+
+    toString() {
+        var fixedNumber = 8;
+        return `${this.elements[0].toFixed(fixedNumber)} ${this.elements[1].toFixed(fixedNumber)} ${this.elements[2].toFixed(fixedNumber)}
+${this.elements[3].toFixed(fixedNumber)} ${this.elements[4].toFixed(fixedNumber)} ${this.elements[5].toFixed(fixedNumber)}
+${this.elements[6].toFixed(fixedNumber)} ${this.elements[7].toFixed(fixedNumber)} ${this.elements[8].toFixed(fixedNumber)}`
     }
 }
 

@@ -172,10 +172,10 @@ var Composite = class {
     }
 
     applyForce(force, position) {
-        if (this.shape == Composite.SHAPES.TERRAIN3) {
-            return
-        }
         if (this.isMaxParent()) {
+            if (this.getGlobalFlag(this.constructor.FLAGS.KINEMATIC | this.constructor.FLAGS.STATIC)) {
+                return;
+            }
             this.global.body.netForce.addInPlace(force);
             this.global.body.netTorque.addInPlace((position.subtract(this.global.body.position)).cross(force));
             return;
@@ -240,7 +240,7 @@ var Composite = class {
             this.global.flags = this.parent.global.flags | this.local.flags;
 
             this.global.body.rotation.set(this.parent.global.body.rotation.multiply(this.local.body.rotation));
-            this.global.body.previousPosition = this.global.body.position.copy();
+            //this.global.body.previousPosition = this.global.body.position.copy();
             this.global.body.position.set(this.parent.global.body.position.add(this.parent.global.body.rotation.multiplyVector3(this.local.body.position)));
             this.global.body.acceleration.set(this.parent.global.body.acceleration.add(this.parent.global.body.rotation.multiplyVector3(this.local.body.acceleration)));
 
@@ -309,7 +309,7 @@ var Composite = class {
     update() {
         if (!this.isMaxParent()) {
             this.local.body.update(world);
-            return;
+            //return;
         }
         this.global.body.update(world);
     }
@@ -328,7 +328,6 @@ var Composite = class {
             this.updateMaxParentMomentOfInertia();
         }
 
-
         for (var i = 0; i < this.children.length; i++) {
             this.children[i].updateBeforeCollisionAll();
         }
@@ -344,13 +343,13 @@ var Composite = class {
 
     updateMesh() {
         if (this.mesh) {
-            this.mesh.position.copy(this.global.body.position);
-            var quat = this.global.body.rotation.copy();
-            quat.x *= -1;
+            //this.mesh.position.copy(this.global.body.position);
+            //var quat = this.global.body.rotation.copy();
+            //quat.x *= -1;
             //quat.y *= -1;
-            quat.z *= -1;
+            //quat.z *= -1;
             //quat.w *= -1;
-            this.mesh.quaternion.copy(quat);
+            //this.mesh.quaternion.copy(quat);
         }
     }
 

@@ -56,11 +56,11 @@ var CameraTHREEJS = class {
         return new Vector3(Math.cos(this.looking.y) * Math.cos(this.looking.xz), Math.sin(this.looking.y), Math.cos(this.looking.y) * Math.sin(this.looking.xz));
     }
 
-    update(entity) {
+    update(position) {
         var normalizedLookAt = this.getLookAt().normalize();
 
         this.camera.lookAt(camera.position.clone().add(normalizedLookAt));
-        this.origin.set(this.origin.lerp(entity.position, 1));
+        this.origin.set(this.origin.lerp(position, 1));
         this.camera.position.set(...this.origin);
         this.camera.position.add(normalizedLookAt.scale(-this.pullback));
     }

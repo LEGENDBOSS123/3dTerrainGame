@@ -111,29 +111,22 @@ var Triangle = class {
         }
     }
 
-    intersectsSphere = function (position, radius) {
+    intersectsSphere = function (position) {
         if(!this.containsPoint(position)){
-            var points = [this.closestPointOnLineSegment(this.a, this.b, position), this.closestPointOnLineSegment(this.b, this.c, position), this.closestPointOnLineSegment(this.c, this.a, position)];
+            var points = [this.closestPointOnLineSegment(this.a, this.b, position), this.closestPointOnLineSegment(this.b, this.c, position), this.closestPointOnLineSegment(this.a, this.c, position)];
             var distances = [points[0].distanceSquared(position), points[1].distanceSquared(position), points[2].distanceSquared(position)];
-            var minIndex = -1;
+            var minIndex = 0;
 
-            for (var i = 0; i < distances.length; i++) {
-                if (distances[i] < distances[minIndex] && distances[i] < radius * radius) {
+            for (var i = 1; i < distances.length; i++) {
+                if (distances[i] < distances[minIndex]) {
                     minIndex = i;
                 }
-            }
-            if(minIndex == -1){
-                return null;
             }
             return points[minIndex];
         }
         var normal = this.getNormal();
-        var distance = normal.dot(position.subtract(this.a));
-        var planePoint = position.add(normal.scale(distance));
-
-        if (planePoint.distanceSquared(position) > radius * radius) {
-            return null;
-        }
+        var distance = this.a.subtract(position).projectOnto(normal);
+        var planePoint = position.add(distance);
         return planePoint;
     };
 

@@ -27,13 +27,13 @@ var mouse = new THREE.Vector2();
 
 
 var world = new World();
-world.setIterations(2);
+world.setIterations(8);
 
 
 
 
 
-var player = new Composite({radius:5, global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(0, 4000, 0) } }, local: { body: { mass: 0 } } });
+var player = new Composite({radius:5, global: { body: { acceleration: new Vector3(0, -5, 0), position: new Vector3(0, 5000, 0) } }, local: { body: { mass: 0 } } });
 player.setMesh({ radius: 5, material: new THREE.MeshPhongMaterial({ color: 0x00ff00, wireframe: false }) });
 
 
@@ -45,7 +45,7 @@ var addToPlayer = function(pos, mass = 10){
 
     var playerPart = new Sphere();
     playerPart.radius = 30;
-    playerPart.setMesh({material: new THREE.MeshPhongMaterial({ color: Math.floor(Math.random()**4 * 0xffffff), wireframe: true }) });
+    playerPart.setMesh({radius: 10, material: new THREE.MeshPhongMaterial({ color: Math.floor(Math.random()**4 * 0xffffff), wireframe: true }) });
     playerPart.addToScene(scene);
     playerPart.local.body.setMass(mass);
     playerPart.local.body.position.x += pos.x;
@@ -64,7 +64,7 @@ for(var i = 0; i < dd.x; i++){
             }
             var ezclaps = 45;
             var v = new Vector3(j * ezclaps, k * ezclaps, i * ezclaps);
-            addToPlayer(v.add(new Vector3(0, 0, 0)), 0.2);
+            addToPlayer(v.add(new Vector3(0, 0, 0)), 100);
         }
     }
 }
@@ -77,7 +77,7 @@ for(var i = 0 ; i < 0; i++){
 
 
 setInterval(function(){
-    var sphere = new Sphere({radius: Math.random() * 40 + 40, local: {body:{mass: 1}},global: { body: { acceleration: new Vector3(0, -0.5, 0), position: new Vector3(200 + Math.random() * 100, 4500, Math.random() * 500) } }});
+    var sphere = new Sphere({radius: Math.random() * 40 + 40, local: {body:{mass: 1}},global: { body: { acceleration: new Vector3(0, -5, 0), position: new Vector3(200 + Math.random() * 100, 4500, Math.random() * 500) } }});
     sphere.setMesh({material: new THREE.MeshPhongMaterial({ color: Math.floor(Math.random() * 0xffffff), wireframe: false }) });
     sphere.addToScene(scene);
     world.addComposite(sphere);
@@ -136,7 +136,7 @@ var generate2dHeightmap = function (xDim, zDim) {
         for (var z = 0; z < zDim; z++) {
             var x1 = (x-xDim/2)/10;
             var z1 = (z-zDim/2)/10;
-            row.push(Math.sin(x1)*75);
+            row.push(Math.sin(x1/10000)*1);
         }
         map.push(row);
     }
@@ -146,8 +146,8 @@ var generate2dHeightmap = function (xDim, zDim) {
     for (var x = 0; x < xDim; x++) {
         var row = [];
         for (var z = 0; z < zDim; z++) {
-            row.push(0*(noise.perlin2(x / 10, z / 10) * 120 + noise.perlin2(x / 10, z / 10) * Math.sin(x/10) * 75 
-            + (noise.perlin2(x / 10, z / 10)+1) * Math.sin((noise.simplex2(x + z, z - x))/100)**4 * 340));
+            //row.push(1*(noise.perlin2(x / 10, z / 10) * 120 + noise.perlin2(x / 10, z / 10) * Math.sin(x/10) * 75 + (noise.perlin2(x / 10, z / 10)+1) * Math.sin((noise.simplex2(x + z, z - x))/100)**4 * 100));
+            row.push(0 * x);
         }
         map.push(row);
     }
@@ -218,8 +218,9 @@ loader.load("ez" + extension, function (txt) {
 });
 terrain1.addToScene(scene);
 terrain1.setMesh(terrain1Material);
-    terrain1.mesh.receiveShadow = true;
-    terrain1.mesh.castShadow = true;
+terrain1.mesh.receiveShadow = true;
+terrain1.mesh.castShadow = true;
+terrain1.setLocalFlag(Terrain3.FLAGS.STATIC, true);
 terrain1.local.body.setPosition(new Vector3(-290, 0, 0));
 var terrain2 = Terrain3.from2dArrays(topArray2, topArray2);
 terrain1.local.body.setMass(Infinity);
@@ -267,7 +268,7 @@ window.addEventListener('mousemove', function (e) {
 top.grounded = false;
 top.groundedIter = 0;
 var start = performance.now();
-var fps = 120;
+var fps = 30;
 var steps = 0;
 function render() {
     stats.begin();
@@ -309,13 +310,17 @@ function render() {
     var now = performance.now();
     var delta = (now - start) / 1000;
     var steps2 = delta * fps;
-    for (var i = 0; i < steps2 - steps; i++) {
+    for (var i = 0; i < Math.floor(steps2 - steps); i++) {
         world.step();
         steps++;
     }
-    //var lerpAmount = steps - steps2;
-    //console.log(lerpAmount);
-
+    var lerpAmount = steps2%1;
+    for(var child of world.composites){
+        if(child.mesh){
+            child.mesh.position.lerpVectors(child.global.body.actualPreviousPosition, child.global.body.position, lerpAmount);
+            child.mesh.quaternion.slerpQuaternions(child.global.body.previousRotation, new THREE.Quaternion().copy(child.global.body.rotation), lerpAmount);
+        }
+    }
     groundedIter--;
     if (!grounded || groundedIter > 0) {
         cameraControls.movement.up = false;
@@ -323,22 +328,16 @@ function render() {
     else {
         if(cameraControls.movement.up){
             var vel = player.global.body.getVelocity();
-            player.global.body.setVelocity(new Vector3(vel.x / world.deltaTime, vel.y/world.deltaTime + 20, vel.z / world.deltaTime).scale(world.deltaTime));
+            player.global.body.setVelocity(new Vector3(vel.x / world.deltaTime, vel.y/world.deltaTime + 60, vel.z / world.deltaTime).scale(world.deltaTime));
         }
         groundedIter = 1;
     }
     
-    var delta = cameraControls.getDelta(camera).scale(6 * player.global.body.mass * world.deltaTime);
+    var delta = cameraControls.getDelta(camera).scale(24 * player.global.body.mass * world.deltaTime);
     player.applyForce(delta, player.global.body.position);
-    var vel = player.global.body.getVelocity();
-    var ogvel = vel.copy();
+       
     
-    vel.scaleInPlace(0.95);
-    vel.y = ogvel.y;
-    //player.global.body.setVelocity(vel);
-   
-    
-    gameCamera.update(player.global.body);
+    gameCamera.update(Vector3.from(new THREE.Vector3().lerpVectors(player.global.body.actualPreviousPosition, player.global.body.position, lerpAmount)));
     if (skyboxMesh) {
         skyboxMesh.position.copy(camera.position);
     }
@@ -352,4 +351,4 @@ setTimeout(function () {
     render();
     top.start = performance.now();
 
-}, 0);
+},0);
