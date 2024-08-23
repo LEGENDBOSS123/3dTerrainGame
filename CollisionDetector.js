@@ -237,7 +237,7 @@ var CollisionDetector = class {
         var max = new Vector3(heightmapPos.x + heightmapSphereWidth, 0, heightmapPos.z + heightmapSphereWidth);
         var top = [];
         for(var i = 0; i < 1; i++){
-            top[i] = [Infinity, null];
+            top[i] = [-Infinity, null];
         }
         for(var x = min.x - 1; x <= max.x + 1; x++){
             for(var z = min.z - 1; z <= max.z + 1; z++){
@@ -271,11 +271,11 @@ var CollisionDetector = class {
                     
                     contact.velocity = sphere1.getVelocityAtPosition(contact.point).subtractInPlace(terrain1.getVelocityAtPosition(contact.point));
                     for(var i = 0; i < top.length; i++){
-                        if(contact.penetration <= top[i][0]){
+                        if(contact.penetration >= top[i][0]){
                             top[i][0] = contact.penetration;
                             if(top[i][1]){
                                 if(top[i][1].point.equals(contact.point) && top[i][1].normal.equals(contact.normal)){
-                                    break;
+                                    //break;
                                 }
                             }
                             top[i][1] = contact;
