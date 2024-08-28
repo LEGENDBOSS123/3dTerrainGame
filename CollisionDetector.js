@@ -104,14 +104,13 @@ var CollisionDetector = class {
             if (!maxParentMap.has(contact.body2.maxParent.id)) {
                 maxParentMap.set(contact.body2.maxParent.id, { penetrationSum: 0, contacts: [] });
             }
-
+            contact.shared.material = contact.body1.material.getCombined(contact.body2.material);
             var contact2 = contact.copy();
             var temp = contact.body1;
             contact2.body1 = contact.body2;
             contact2.body2 = temp;
-            contact2.velocity.scaleInPlace(-1);
-            contact2.normal.scaleInPlace(-1);
-            contact2.point = contact.point.copy();
+            contact2.velocity = contact2.velocity.scale(-1);
+            contact2.normal = contact2.normal.scale(-1);
             
             var contacts = maxParentMap.get(contact.body1.maxParent.id).contacts;
             for (var j = 0; j < contacts.length; j++) {
@@ -142,11 +141,18 @@ var CollisionDetector = class {
         for (var [key, value] of maxParentMap) {
             for (var i = 0; i < value.contacts.length; i++) {
                 var contact = value.contacts[i];
+                if(contact.body1.maxParent == player){
+                    top.grounded = true;
+                }
+                if(contact.shared.solved){
+                    contact.body1.applyForce(contact.shared.impulse.scale( -1 * contact.penetration / maxParentMap.get(contact.body1.maxParent.id).penetrationSum), contact.point);
+                    continue;
+                }
                 var impactSpeed = contact.velocity.dot(contact.normal);
                 impactSpeed = contact.velocity.dot(contact.normal);
                 var force = new Vector3();
 
-                var restitution = 0;
+                var restitution = contact.shared.material.restitution;
                 var radius1 = contact.point.subtract(contact.body1.maxParent.global.body.position);
                 var radius2 = contact.point.subtract(contact.body2.maxParent.global.body.position);
                 
@@ -156,7 +162,6 @@ var CollisionDetector = class {
                 rotationalEffects2 = isFinite(rotationalEffects2) ? rotationalEffects2 : 0;
                 var denominator = contact.body1.maxParent.global.body.inverseMass + rotationalEffects1;
                 denominator += contact.body2.maxParent.global.body.inverseMass + rotationalEffects2;
-                
                 var impulse = - (1 + restitution) * impactSpeed / denominator;
             
                 if (impulse < 0) {
@@ -164,16 +169,14 @@ var CollisionDetector = class {
                 }
                 
                 var tangential = contact.velocity.projectOntoPlane(contact.normal);
-                var maxFriction = tangential.magnitude() / denominator * 0.5;
+                var maxFriction = tangential.magnitude() / denominator;
                 tangential.normalizeInPlace();
-                var friction = impulse * 1;
+                var friction = impulse * contact.shared.material.friction;
                 force.addInPlace(tangential.scale(-1 * Math.max(0, Math.min(maxFriction, friction))));
                 force.addInPlace(contact.normal.scale(impulse));
-                contact.body1.applyForce(force.scale(contact.penetration / maxParentMap.get(contact.body1.maxParent.id).penetrationSum), contact.point);
-                
-                if(contact.body1.maxParent == player){
-                    top.grounded = true;
-                }
+                contact.shared.impulse = force;
+                contact.shared.solved = true;
+                contact.body1.applyForce(contact.shared.impulse.scale(contact.penetration / maxParentMap.get(contact.body1.maxParent.id).penetrationSum), contact.point);
             }
         }
         var totalTranslation = new Vector3();

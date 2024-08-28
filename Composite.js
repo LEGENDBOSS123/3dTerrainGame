@@ -31,6 +31,7 @@ var Composite = class {
         this.parent = options?.parent ?? null;
         this.maxParent = options?.maxParents ?? this;
         this.children = options?.children ?? [];
+        this.material = options?.material ?? new Material();
         this.global = {};
         this.global.body = new PhysicsBody3(options?.global?.body);
         this.global.hitbox = new Hitbox3();
@@ -43,8 +44,18 @@ var Composite = class {
 
         this.local.hitbox = new Hitbox3();
         this.mesh = options?.mesh ?? null;
-
     }
+
+    setRestitution(restitution) {
+        this.material.setRestitution(restitution);
+        return this;
+    }
+
+    setFriction(friction) {
+        this.material.setFriction(friction);
+        return this;
+    }
+
 
     calculateLocalMomentOfInertia() {
         this.local.body.momentOfInertia = Matrix3.zero();
@@ -240,7 +251,9 @@ var Composite = class {
             this.global.flags = this.parent.global.flags | this.local.flags;
 
             this.global.body.rotation.set(this.parent.global.body.rotation.multiply(this.local.body.rotation));
+            this.global.body.actualPreviousPosition = this.global.body.previousPosition.copy();
             this.global.body.previousPosition = this.global.body.position.copy();
+            
             this.global.body.position.set(this.parent.global.body.position.add(this.parent.global.body.rotation.multiplyVector3(this.local.body.position)));
             this.global.body.acceleration.set(this.parent.global.body.acceleration.add(this.parent.global.body.rotation.multiplyVector3(this.local.body.acceleration)));
 
@@ -343,8 +356,8 @@ var Composite = class {
 
     updateMesh() {
         if (this.mesh) {
-            this.mesh.position.copy(this.global.body.position);
-            this.mesh.quaternion.copy(this.global.body.rotation.copy());
+            //this.mesh.position.copy(this.global.body.position);
+            //this.mesh.quaternion.copy(this.global.body.rotation.copy());
         }
     }
 
